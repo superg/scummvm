@@ -23,8 +23,8 @@ static const GagGameDescription gameDescriptions[] =
 			"gag",
 			0,
 			{
-				{ "Gag01.cdf", 0, "d45300e994683cced978328b54ccd116", 421461821},
-				{ "Gag02.cdf", 0, "ca055dd111cf79661471162ddc90d572", 628343005},
+				{ "Gag01.cdf", 0, "e12804933212bf1d0cdb475fce22f1e4", 421461821},
+				{ "Gag02.cdf", 0, "f885d86a227028c04c0b50fb9c82529a", 628343005},
 				AD_LISTEND
 			},
 			Common::RU_RUS,
@@ -40,8 +40,8 @@ static const GagGameDescription gameDescriptions[] =
 			"gag",
 			"English version",
 			{
-				{ "gag01.cdf", 0, "96313dddbf93fd1143f725eb9b9a913f", 422502015},
-				{ "Gag02.cdf", 0, "b6dd5122cfc137dce4c255c25d05b8ea", 634529036},
+				{ "gag01.cdf", 0, "8b9f9ce46ce212162e7ea65eb62eeadb", 422502015},
+				{ "Gag02.cdf", 0, "dd9e339a077c522c8b2ab903f38e772f", 634529036},
 				AD_LISTEND
 			},
 			Common::EN_ANY,
