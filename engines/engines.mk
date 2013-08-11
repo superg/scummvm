@@ -61,6 +61,11 @@ DEFINES += -DENABLE_DREAMWEB=$(ENABLE_DREAMWEB)
 MODULES += engines/dreamweb
 endif
 
+ifdef ENABLE_GAG
+DEFINES += -DENABLE_GAG=$(ENABLE_GAG)
+MODULES += engines/gag
+endif
+
 ifdef ENABLE_GOB
 DEFINES += -DENABLE_GOB=$(ENABLE_GOB)
 MODULES += engines/gob

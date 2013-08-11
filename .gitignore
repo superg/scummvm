@@ -175,3 +175,8 @@ ScummVM.includes
 
 #Ignore Komodo IDE/Edit project files
 *.komodoproject
+
+#Ignore KDevelop IDE project files
+.kdev4
+scummvm.kdev4
+
