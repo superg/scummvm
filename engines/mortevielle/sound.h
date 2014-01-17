@@ -36,79 +36,67 @@
 namespace Mortevielle {
 class MortevielleEngine;
 
+const int kNullValue = 255;
+const int kTempoMusic = 71;
+const int kTempoNoise = 78;
+const int kTempoF = 80;
+const int kTempoM = 89;
+
+struct SpeechQueue {
+	int _val;
+	int _code;
+	int _acc;
+	int _freq;
+	int _rep;
+};
+
 typedef int tablint[256];
-
-/**
- * Structure used to store pending notes to play
- */
-struct SpeakerNote {
-	int freq;
-	uint32 length;
-
-	SpeakerNote(int noteFreq, uint32 noteLength) {
-		freq = noteFreq;
-		length = noteLength;
-	}
-};
-
-/**
- * This is a modified PC Speaker class that allows the queueing of an entire song
- * sequence one note at a time.
- */
-class PCSpeaker : public Audio::AudioStream {
-private:
-	Common::Queue<SpeakerNote> _pendingNotes;
-	Common::Mutex _mutex;
-
-	int _rate;
-	uint32 _oscLength;
-	uint32 _oscSamples;
-	uint32 _remainingSamples;
-	uint32 _mixedSamples;
-	byte _volume;
-
-	void dequeueNote();
-protected:
-	static int8 generateSquare(uint32 x, uint32 oscLength);
-public:
-	PCSpeaker(int rate = 44100);
-	~PCSpeaker();
-
-	/** Play a note for length microseconds.
-	 */
-	void play(int freq, uint32 length);
-	/** Stop the currently playing sequence */
-	void stop();
-	/** Adjust the volume. */
-	void setVolume(byte volume);
-
-	bool isPlaying() const;
-
-	int readBuffer(int16 *buffer, const int numSamples);
-
-	bool isStereo() const	{ return false; }
-	bool endOfData() const	{ return false; }
-	bool endOfStream() const { return false; }
-	int getRate() const	{ return _rate; }
-};
 
 class SoundManager {
 private:
 	MortevielleEngine *_vm;
-	Audio::Mixer *_mixer;
-	PCSpeaker *_speakerStream;
-	Audio::SoundHandle _speakerHandle;
+
+	byte *_ambiantNoiseBuf;
+	byte *_noiseBuf;
+	int _phonemeNumb;
+	int _soundType;
+	SpeechQueue _queue[3];
+	byte _wordBuf[1712];
+	byte _troctBuf[10576];
+	bool _buildingSentence;
+	int _ptr_oct;
+	int _tbi[256];
+
+	Audio::QueuingAudioStream *_audioStream;
+
+	void loadPhonemeSounds();
+	void moveQueue();
+	void initQueue();
+	void handlePhoneme();
+
+	void spfrac(int wor);
+	void charg_car(int &currWordNumb);
+	void entroct(byte o);
+	void cctable(tablint &t);
+	void trait_car();
+
+	void regenbruit();
+	void litph(tablint &t, int typ, int tempo);
+
 public:
-	SoundManager(Audio::Mixer *mixer);
+	SoundManager(MortevielleEngine *vm, Audio::Mixer *mixer);
 	~SoundManager();
 
-	void setParent(MortevielleEngine *vm);
-	void playNote(int frequency, int32 length);
+	Audio::Mixer *_mixer;
+	Audio::SoundHandle _soundHandle;
+	uint16 *_cfiphBuffer;
 
 	int decodeMusic(const byte *PSrc, byte *PDest, int size);
 	void playSong(const byte *buf, uint usize, uint loops);
-
-	void litph(tablint &t, int typ, int tempo);
+	void loadAmbiantSounds();
+	void loadNoise();
+	void startSpeech(int rep, int ht, int typ);
+	void waitSpeech();
 };
 
 } // End of namespace Mortevielle

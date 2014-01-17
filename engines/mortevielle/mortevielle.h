@@ -44,7 +44,6 @@
 #include "mortevielle/mouse.h"
 #include "mortevielle/saveload.h"
 #include "mortevielle/sound.h"
-#include "mortevielle/speech.h"
 #include "mortevielle/outtext.h"
 
 namespace Mortevielle {
@@ -52,7 +51,8 @@ namespace Mortevielle {
 // Debug channels
 enum {
 	kMortevielleCore = 1 << 0,
-	kMortevielleGraphics = 1 << 1
+	kMortevielleGraphics = 1 << 1,
+	kMortevielleSounds = 1 << 2
 };
 
 // Game languages
@@ -60,6 +60,11 @@ enum {
 	MORTDAT_LANG_FRENCH = 0,
 	MORTDAT_LANG_ENGLISH = 1,
 	MORTDAT_LANG_GERMAN = 2
+};
+
+enum {
+	kUseOriginalData = 0,
+	kUseEngineDataFile = 1
 };
 
 // Static string list
@@ -115,6 +120,7 @@ const int kMenuSelfStringIndex = 497;
 const int kMenuSayStringIndex = 502;
 const int kMaxPatt = 20;
 
+const int kResolutionScaler = 2;
 /*
 9   "A glance at the forbidden$",
 18  "It's already open$",
@@ -127,18 +133,6 @@ enum Places {
 	LANDING = 15,     CRYPT = 16,       SECRET_PASSAGE = 17, ROOM18 = 18,      MOUNTAIN = 19,
 	CHAPEL = 20,      MANOR_FRONT = 21, MANOR_BACK = 22,     INSIDE_WELL = 23, WELL = 24,
 	DOOR = 25,        ROOM26 = 26,      COAT_ARMS = 27
-};
-
-enum GraphicModes { MODE_AMSTRAD1512 = 0, MODE_CGA = 1, MODE_EGA = 2, MODE_HERCULES = 3, MODE_TANDY = 4 };
-
-struct nhom {
-	byte _id;     /* number between 0 and 32 */
-	byte _hom[4];
-};
-
-struct CgaPalette {
-	byte _p;
-	nhom _a[16];
 };
 
 struct Pattern {
@@ -169,16 +163,17 @@ struct Hint {
 	byte _point;
 };
 
+struct MortevielleGameDescription;
+
 class MortevielleEngine : public Engine {
 private:
-	const ADGameDescription *_gameDescription;
+	const MortevielleGameDescription *_gameDescription;
 	Common::Stack<int> _keypresses;
 	uint32 _lastGameFrame;
 	Common::Point _mousePos;
 	Common::StringArray _engineStrings;
 	Common::StringArray _gameStrings;
 
-	Pattern _patternArr[15];
 	int _menuOpcode;
 
 	bool _inMainGameLoop;	// Flag when the main game loop is active
@@ -219,10 +214,9 @@ private:
 	int  _minute;
 	int  _curSearchObjId;
 	int  _controlMenu;
-	int  _startHour;
-	int  _endHour;
+	int  _startTime;
+	int  _endTime;
 	Common::Point _stdPal[91][17];
-	CgaPalette _cgaPal[91];
 
 	int  _x26KeyCount;
 	int  _roomDoorId;
@@ -235,7 +229,8 @@ private:
 	int  _x;
 	int  _y;
 	int  _currentHourCount;
-	int  _currentDayHour;
+	int  _currentTime;
+	int  _pauseStartTime;
 
 	Common::String _hintPctMessage;
 	byte  *_cfiecBuffer;
@@ -255,10 +250,8 @@ private:
 	void mainGame();
 	void playGame();
 	void handleAction();
-	void displayCGAPattern(int n, Pattern *p, nhom *pal);
 	void loadPalette();
 	void loadTexts();
-	void loadBRUIT5();
 	void loadCFIEC();
 	void loadCFIPH();
 	void showTitleScreen();
@@ -277,7 +270,6 @@ private:
 	void getReadDescription(int objId);
 	void getSearchDescription(int objId);
 	int  checkLeaveSecretPassage();
-	void changeGraphicalDevice(int newDevice);
 	void startDialog(int16 rep);
 	void endSearch();
 	int convertCharacterIndexToBitIndex(int characterIndex);
@@ -385,6 +377,7 @@ private:
 	void displayQuestionText(Common::String s, int cmd);
 	void displayTextInDescriptionBar(int x, int y, int nb, int mesgId);
 	void displayTextInVerbBar(Common::String text);
+	void displayTextBlock(Common::String text);
 	void mapMessageId(int &mesgId);
 	void resetOpenObjects();
 	void setCoordinates(int sx);
@@ -398,13 +391,13 @@ private:
 	void prepareNextObject();
 	void putObject();
 	void resetObjectPlace();
+	void resetCoreVar();
+	void drawDiscussionBox();
+	void displayNarrativePicture(int af, int ob);
+	void menuUp();
+	void displayLookScreen(int objId);
 
 	void adzon();
-	void premtet();
-	void ecr2(Common::String text);
-	void tlu(int af, int ob);
-	void mennor();
-	void treg(int objId);
 
 public:
 	Common::Point _prevPos;
@@ -418,8 +411,6 @@ public:
 	bool _blo;
 	bool _destinationOk;
 	bool _largestClearScreen;
-	int  _currGraphicalDevice;
-	int  _newGraphicalDevice;
 	float _addFix;
 	int  _savedBitIndex;
 	int  _numpal;
@@ -431,30 +422,26 @@ public:
 	int _caff;
 	int _crep;
 
-	int _resolutionScaler;
 	byte _destinationArray[7][25];
 
-	// TODO: Replace the following with proper implementations, or refactor out the code using them
-	byte _mem[65536 * 16];
 	byte *_curPict;
 	byte *_curAnim;
 	byte *_rightFramePict;
-	byte *_compMusicBuf1;
 	
-	Debugger _debugger;
-	ScreenSurface _screenSurface;
 	PaletteManager _paletteManager;
 	GfxSurface _backgroundSurface;
 	Common::RandomSource _randomSource;
-	SoundManager _soundManager;
-	SavegameManager _savegameManager;
-	SpeechManager _speechManager;
-	Menu _menu;
-	MouseHandler _mouse;
-	TextHandler _text;
-	DialogManager _dialogManager;
 
-	MortevielleEngine(OSystem *system, const ADGameDescription *gameDesc);
+	Debugger *_debugger;
+	ScreenSurface *_screenSurface;
+	SoundManager *_soundManager;
+	SavegameManager *_savegameManager;
+	Menu *_menu;
+	MouseHandler *_mouse;
+	TextHandler *_text;
+	DialogManager *_dialogManager;
+
+	MortevielleEngine(OSystem *system, const MortevielleGameDescription *gameDesc);
 	~MortevielleEngine();
 	virtual bool hasFeature(EngineFeature f) const;
 	virtual bool canLoadGameStateCurrently();
@@ -462,8 +449,12 @@ public:
 	virtual Common::Error loadGameState(int slot);
 	virtual Common::Error saveGameState(int slot, const Common::String &desc);
 	virtual Common::Error run();
+	virtual void pauseEngineIntern(bool pause);
+	virtual GUI::Debugger *getDebugger() {return _debugger;}
 	uint32 getGameFlags() const;
 	Common::Language getLanguage() const;
+	Common::Language getOriginalLanguage() const;
+	bool useOriginalData() const;
 	static Common::String generateSaveFilename(const Common::String &target, int slot);
 	Common::String generateSaveFilename(int slot) { return generateSaveFilename(_targetName, slot); }
 
@@ -495,7 +486,7 @@ public:
 	void handleDescriptionText(int f, int mesgId);
 	int  getAnimOffset(int frameNum, int animNum);
 
-	void hirs();
+	void clearScreen();
 };
 
 extern MortevielleEngine *g_vm;

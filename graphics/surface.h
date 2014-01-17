@@ -61,11 +61,13 @@ struct Surface {
 	 */
 	uint16 pitch;
 
+protected:
 	/**
 	 * The surface's pixel data.
 	 */
 	void *pixels;
 
+public:
 	/**
 	 * The pixel format of the surface.
 	 */
@@ -76,6 +78,33 @@ struct Surface {
 	 */
 	Surface() : w(0), h(0), pitch(0), pixels(0), format() {
 	}
+
+	/**
+	 * Return a pointer to the pixel data.
+	 *
+	 * @return Pointer to the pixel data.
+	 */
+	inline const void *getPixels() const {
+		return pixels;
+	}
+
+	/**
+	 * Return a pointer to the pixel data.
+	 *
+	 * @return Pointer to the pixel data.
+	 */
+	inline void *getPixels() {
+		return pixels;
+	}
+
+	/**
+	 * Sets the pixel data.
+	 *
+	 * Note that this is a simply a setter. Be careful what you are doing!
+	 *
+	 * @param newPixels The new pixel data.
+	 */
+	void setPixels(void *newPixels) { pixels = newPixels; }
 
 	/**
 	 * Return a pointer to the pixel at the specified point.
@@ -122,6 +151,20 @@ struct Surface {
 	void free();
 
 	/**
+	 * Set up the Surface with user specified data.
+	 *
+	 * Note that this simply sets the 'internal' attributes of the Surface. It
+	 * will not take care of freeing old data via free or similar!
+	 *
+	 * @param width Width of the pixel data.
+	 * @param height Height of the pixel data.
+	 * @param pitch The pitch of the pixel data.
+	 * @param pixels The pixel data itself.
+	 * @param format The pixel format of the pixel data.
+	 */
+	void init(uint16 width, uint16 height, uint16 pitch, void *pixels, const PixelFormat &format);
+
+	/**
 	 * Copy the data from another Surface.
 	 *
 	 * Note that this calls free on the current surface, to assure it being
@@ -164,6 +207,30 @@ struct Surface {
 	 *             will get clipped in case it does not fit!
 	 */
 	const Surface getSubArea(const Common::Rect &area) const;
+
+	/**
+	 * Copies a bitmap to the Surface internal buffer. The pixel format
+	 * of buffer must match the pixel format of the Surface.
+	 *
+	 * @param buffer    The buffer containing the graphics data source
+	 * @param pitch     The pitch of the buffer (number of bytes in a scanline)
+	 * @param destX     The x coordinate of the destination rectangle
+	 * @param destY     The y coordinate of the destination rectangle
+	 * @param width     The width of the destination rectangle
+	 * @param height    The height of the destination rectangle
+	 */
+	void copyRectToSurface(const void *buffer, int srcPitch, int destX, int destY, int width, int height);
+	/**
+	 * Copies a bitmap to the Surface internal buffer. The pixel format
+	 * of buffer must match the pixel format of the Surface.
+	 *
+	 * @param srcSurface    The source of the bitmap data
+	 * @param destX         The x coordinate of the destination rectangle
+	 * @param destY         The y coordinate of the destination rectangle
+	 * @param subRect       The subRect of surface to be blitted
+	 * @return                
+	 */
+	void copyRectToSurface(const Graphics::Surface &srcSurface, int destX, int destY, const Common::Rect subRect);
 
 	/**
 	 * Convert the data to another pixel format.
@@ -267,7 +334,9 @@ struct Surface {
  */
 struct SharedPtrSurfaceDeleter {
 	void operator()(Surface *ptr) {
-		ptr->free();
+		if (ptr) {
+			ptr->free();
+		}
 		delete ptr;
 	}
 };

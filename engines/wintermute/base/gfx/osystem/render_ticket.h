@@ -36,10 +36,23 @@
 namespace Wintermute {
 
 class BaseSurfaceOSystem;
+/**
+ * A single RenderTicket.
+ * A render ticket is a collection of the data and draw specifications made
+ * for a single draw-call in the OSystem-backend for WME. The ticket additionally
+ * holds the order in which this call was made, so that it can be detected if
+ * the same call is done in the following frame. Thus allowing us to potentially 
+ * skip drawing the same region again, unless anything has changed. Since a surface 
+ * can have a potentially large amount of draw-calls made to it, at varying rotation, 
+ * zoom, and crop-levels we also need to hold a copy of the necessary data. 
+ * (Video-surfaces may even change their data). The promise that is made when a ticket 
+ * is created is that what the state was of the surface at THAT point, is what will end 
+ * up on screen at flip() time.
+ */
 class RenderTicket {
 public:
 	RenderTicket(BaseSurfaceOSystem *owner, const Graphics::Surface *surf, Common::Rect *srcRect, Common::Rect *dstRest, TransformStruct transform); 
-	RenderTicket() : _isValid(true), _wantsDraw(false), _drawNum(0), _transform(TransformStruct()) {}
+	RenderTicket() : _isValid(true), _wantsDraw(false), _transform(TransformStruct()) {}
 	~RenderTicket();
 	const Graphics::Surface *getSurface() const { return _surface; }
 	// Non-dirty-rects:
@@ -48,11 +61,9 @@ public:
 	void drawToSurface(Graphics::Surface *_targetSurface, Common::Rect *dstRect, Common::Rect *clipRect) const;
 
 	Common::Rect _dstRect;
-	uint32 _batchNum;
 
 	bool _isValid;
 	bool _wantsDraw;
-	uint32 _drawNum;
 
 	TransformStruct _transform; 
 	
