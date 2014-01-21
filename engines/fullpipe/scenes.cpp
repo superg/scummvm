@@ -348,17 +348,43 @@ Vars::Vars() {
 	scene34_dudeOnCactus = false;
 	scene34_fliesCountdown = 0;
 
-	scene35_var01 = 0;
-	scene35_var02 = 0;
-	scene35_var03 = 0;
-	scene35_var04 = 0;
 	scene35_hose = 0;
 	scene35_bellyInflater = 0;
-	scene35_var05 = 0;
-	scene35_var06 = 0;
+	scene35_flowCounter = 0;
+	scene35_fliesCounter = 0;
 
 	scene36_rotohrust = 0;
 	scene36_scissors = 0;
+
+	scene37_rings.clear();
+	scene37_lastDudeX = -1;
+	scene37_cursorIsLocked = 0;
+	scene37_plusMinus1 = 0;
+	scene37_plusMinus2 = 0;
+	scene37_plusMinus3 = 0;
+	scene37_soundFlipper = 0;
+	scene37_dudeX = 0;
+
+	scene38_var01 = 0;
+	scene38_var02 = 0;
+	scene38_var03 = 0;
+	scene38_var04 = 0;
+	scene38_boss = 0;
+	scene38_tally = 0;
+	scene38_shorty = 0;
+	scene38_domino0 = 0;
+	scene38_dominos = 0;
+	scene38_domino1 = 0;
+	scene38_bottle = 0;
+	scene38_var05 = 0;
+	scene38_var06 = 0;
+	scene38_var07 = 0;
+	scene38_var08 = 0;
+	scene38_var09 = 0;
+	scene38_var10 = 0;
+	scene38_var11 = 0;
+	scene38_var12 = 0;
+	scene38_var13 = 0;
 
 	selector = 0;
 }
@@ -916,7 +942,6 @@ bool FullpipeEngine::sceneSwitcher(EntranceInfo *entrance) {
 		_updateCursorCallback = scene34_updateCursor;
 		break;
 
-#if 0
 	case SC_35:
 		sceneVar = _gameLoader->_gameVar->getSubVarByName("SC_35");
 		scene->preloadMovements(sceneVar);
@@ -927,7 +952,6 @@ bool FullpipeEngine::sceneSwitcher(EntranceInfo *entrance) {
 		insertMessageHandler(sceneHandler35, 2, 2);
 		_updateCursorCallback = defaultUpdateCursor;
 		break;
-#endif
 
 	case SC_36:
 		sceneVar = _gameLoader->_gameVar->getSubVarByName("SC_36");
@@ -940,7 +964,6 @@ bool FullpipeEngine::sceneSwitcher(EntranceInfo *entrance) {
 		_updateCursorCallback = scene36_updateCursor;
 		break;
 
-#if 0
 	case SC_37:
 		sceneVar = _gameLoader->_gameVar->getSubVarByName("SC_37");
 		scene->preloadMovements(sceneVar);
@@ -952,6 +975,7 @@ bool FullpipeEngine::sceneSwitcher(EntranceInfo *entrance) {
 		_updateCursorCallback = scene37_updateCursor;
 		break;
 
+#if 0
 	case SC_38:
 		sceneVar = _gameLoader->_gameVar->getSubVarByName("SC_38");
 		scene->preloadMovements(sceneVar);

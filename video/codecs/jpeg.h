@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef VIDEO_CODECS_MJPEG_H
-#define VIDEO_CODECS_MJPEG_H
+#ifndef VIDEO_CODECS_JPEG_H
+#define VIDEO_CODECS_JPEG_H
 
 #include "video/codecs/codec.h"
 #include "graphics/pixelformat.h"
@@ -37,15 +37,15 @@ struct Surface;
 namespace Video {
 
 /**
- * Motion JPEG decoder.
+ * JPEG decoder.
  *
  * Used in video:
- *  - AVIDecoder
+ *  - QuickTimeDecoder
  */
-class MJPEGDecoder : public Codec {
+class JPEGDecoder : public Codec {
 public:
-	MJPEGDecoder();
-	~MJPEGDecoder();
+	JPEGDecoder();
+	~JPEGDecoder();
 
 	const Graphics::Surface *decodeImage(Common::SeekableReadStream *stream);
 	Graphics::PixelFormat getPixelFormat() const { return _pixelFormat; }

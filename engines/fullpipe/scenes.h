@@ -26,9 +26,10 @@
 namespace Fullpipe {
 
 struct BehaviorEntryInfo;
-class StaticANIObject;
-class MctlLadder;
 class MGM;
+class MctlLadder;
+struct Ring;
+class StaticANIObject;
 
 int defaultUpdateCursor();
 
@@ -161,9 +162,16 @@ void scene34_initBeh();
 int sceneHandler34(ExCommand *cmd);
 int scene34_updateCursor();
 
+void scene35_initScene(Scene *sc);
+int sceneHandler35(ExCommand *cmd);
+
 int scene36_updateCursor();
 void scene36_initScene(Scene *sc);
 int sceneHandler36(ExCommand *cmd);
+
+void scene37_initScene(Scene *sc);
+int sceneHandler37(ExCommand *ex);
+int scene37_updateCursor();
 
 void sceneDbgMenu_initScene(Scene *sc);
 int sceneHandlerDbgMenu(ExCommand *cmd);
@@ -491,19 +499,56 @@ public:
 	bool scene34_dudeOnCactus;
 	int scene34_fliesCountdown;
 
-	int scene35_var01;
-	int scene35_var02;
-	int scene35_var03;
-	int scene35_var04;
 	StaticANIObject *scene35_hose;
 	StaticANIObject *scene35_bellyInflater;
-	int scene35_var05;
-	int scene35_var06;
+	int scene35_flowCounter;
+	int scene35_fliesCounter;
 
 	StaticANIObject *scene36_rotohrust;
 	StaticANIObject *scene36_scissors;
 
+	Common::Array<Ring *> scene37_rings;
+	int scene37_lastDudeX;
+	bool scene37_cursorIsLocked;
+	StaticANIObject *scene37_plusMinus1;
+	StaticANIObject *scene37_plusMinus2;
+	StaticANIObject *scene37_plusMinus3;
+	int scene37_soundFlipper;
+	int scene37_dudeX;
+
+	int scene38_var01;
+	int scene38_var02;
+	int scene38_var03;
+	int scene38_var04;
+	StaticANIObject *scene38_boss;
+	StaticANIObject *scene38_tally;
+	StaticANIObject *scene38_shorty;
+	StaticANIObject *scene38_domino0;
+	StaticANIObject *scene38_dominos;
+	StaticANIObject *scene38_domino1;
+	StaticANIObject *scene38_bottle;
+	int scene38_var05;
+	int scene38_var06;
+	int scene38_var07;
+	int scene38_var08;
+	int scene38_var09;
+	int scene38_var10;
+	int scene38_var11;
+	int scene38_var12;
+	int scene38_var13;
+
 	PictureObject *selector;
+};
+
+struct Ring {
+	StaticANIObject *ani;
+	int x;
+	int y;
+	int numSubRings;
+	int subRings[10];
+	bool state;
+
+	Ring();
 };
 
 } // End of namespace Fullpipe
