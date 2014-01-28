@@ -234,7 +234,7 @@ public:
  * In the default mode, filenames are cached with their relative path,
  * with elements separated by slashes, e.g.:
  *
- * c:\my\data\file.ext
+ * c:\\my\\data\\file.ext
  *
  * would be cached as 'data/file.ext' if FSDirectory was created on 'c:/my' with
  * depth > 1. If depth was 1, then the 'data' subdirectory would have been
@@ -248,7 +248,7 @@ public:
  *
  * If the 'flat' argument to the constructor is true, files in subdirectories
  * are cached without the relative path, so in the example above
- * c:\my\data\file.ext would be cached as file.ext.
+ * c:\\my\\data\\file.ext would be cached as file.ext.
  *
  * Client code can customize cache by using the constructors with the 'prefix'
  * parameter. In this case, the prefix is prepended to each entry in the cache,
