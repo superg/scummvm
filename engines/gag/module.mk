@@ -1,6 +1,7 @@
 MODULE := engines/gag
 
 MODULE_OBJS := \
+	cdf_archive.o \
 	detection.o \
 	gag.o
 

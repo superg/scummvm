@@ -29,7 +29,7 @@ static const GagGameDescription gameDescriptions[] =
 			},
 			Common::RU_RUS,
 			Common::kPlatformWindows,
-			ADGF_UNSTABLE | ADGF_CD,
+			/*ADGF_UNSTABLE | */ADGF_CD,
 			GUIO0()
 		}
 	},
@@ -46,7 +46,7 @@ static const GagGameDescription gameDescriptions[] =
 			},
 			Common::EN_ANY,
 			Common::kPlatformWindows,
-			ADGF_UNSTABLE | ADGF_CD,
+			/*ADGF_UNSTABLE | */ADGF_CD,
 			GUIO0()
 		}
 	},

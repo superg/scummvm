@@ -35,6 +35,9 @@ private:
 
 	// We need random numbers
 	Common::RandomSource *_rnd;
+
+	void ExtractCdf(const Common::String &a_fn);
+	void AnimationTest();
 };
 
 // Example console class

@@ -73,9 +73,9 @@ bool uncompress(byte *dst, unsigned long *dstLen, const byte *src, unsigned long
  * @param dictLen   (optional) the size of the dictionary.
  *                  Mandatory if dict is not 0.
  *
- * @return true on success (Z_OK or Z_STREAM_END), false otherwise.
+ * @return number of bytes written on success (Z_OK or Z_STREAM_END), 0 on error.
  */
-bool inflateZlibHeaderless(byte *dst, uint dstLen, const byte *src, uint srcLen, const byte *dict = 0, uint dictLen = 0);
+uint inflateZlibHeaderless(byte *dst, uint dstLen, const byte *src, uint srcLen, const byte *dict = 0, uint dictLen = 0);
 
 /**
  * Wrapper around zlib's inflate functions. This function will call the

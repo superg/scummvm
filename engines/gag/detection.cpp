@@ -7,7 +7,7 @@
 namespace Gag
 {
 
-static const PlainGameDescriptor neverhoodGames[] = {
+static const PlainGameDescriptor gagGames[] = {
 	{"gag", "GAG: The Impotent Mystery"},
 	{0, 0}
 };
@@ -16,7 +16,7 @@ static const PlainGameDescriptor neverhoodGames[] = {
 class GagMetaEngine : public AdvancedMetaEngine
 {
 public:
-	GagMetaEngine() : AdvancedMetaEngine(gameDescriptions, sizeof(GagGameDescription), neverhoodGames) {}
+	GagMetaEngine() : AdvancedMetaEngine(gameDescriptions, sizeof(GagGameDescription), gagGames) {}
 
 	const char *getName() const
 	{
