@@ -12,6 +12,7 @@
 #include "graphics/decoders/bmp.h"
 
 #include "graphics/surface.h"
+#include "graphics/palette.h"
 #include "video/flic_decoder.h"
 
 #include "cdf_archive.h"
@@ -61,6 +62,9 @@ GagEngine::~GagEngine()
 Common::Error GagEngine::run()
 {
 	// Initialize graphics using following:
+
+//	const Graphics::PixelFormat pixelFormat(2, 5, 6, 5, 0, 11, 5, 0, 0); // RGB 565
+//	initGraphics(640, 480, true, &pixelFormat);
 	initGraphics(640, 480, true);
 
 	// You could use backend transactions directly as an alternative,
@@ -148,14 +152,19 @@ void GagEngine::BitmapTest()
 {
 	Graphics::BitmapDecoder bitmap_decoder;
 
+	Common::String aaa(ConfMan.get("path") + "/test.bmp");
+
 	Common::File file;
 	file.open("Gag01/AUTORUN.BMP");
+//	debug("open: %s", aaa.c_str());
+//	file.open("test.bmp");
 
 	if(bitmap_decoder.loadStream(file))
 	{
 		const Graphics::Surface *bitmap_surface = bitmap_decoder.getSurface();
-		Graphics::Surface *surface = bitmap_surface->convertTo(_system->getScreenFormat());
+		Graphics::Surface *surface = bitmap_surface->convertTo(_system->getScreenFormat(), bitmap_decoder.getPalette());
 //		_system->copyRectToScreen((const byte *)surface->getPixels(), surface->pitch, 0, 0, surface->w, surface->h);
+		_system->getPaletteManager()->setPalette(bitmap_decoder.getPalette(), 0, bitmap_decoder.getPaletteColorCount());
 
 
 		while(true)
