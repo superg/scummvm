@@ -9,6 +9,9 @@
 #include "common/fs.h"
 #include "engines/util.h"
 
+#include "graphics/decoders/bmp.h"
+
+#include "graphics/surface.h"
 #include "video/flic_decoder.h"
 
 #include "cdf_archive.h"
@@ -58,7 +61,7 @@ GagEngine::~GagEngine()
 Common::Error GagEngine::run()
 {
 	// Initialize graphics using following:
-	initGraphics(320, 200, false);
+	initGraphics(640, 480, true);
 
 	// You could use backend transactions directly as an alternative,
 	// but it isn't recommended, until you want to handle the error values
@@ -96,19 +99,11 @@ Common::Error GagEngine::run()
 	//TODO: find out how to create directory
 //	ExtractCdf("Gag01.cdf");
 
-	AnimationTest();
-
 	// Additional setup.
 	debug("GagEngine::init");
 
-	// Your main even loop should be (invoked from) here.
-	debug("GagEngine::go: Hello, World!");
-
-	// This test will show up if -d1 and --debugflags=example are specified on the commandline
-	debugC(1, kQuuxDebugExample, "Example debug call");
-
-	// This test will show up if --debugflags=example or --debugflags=example2 or both of them and -d3 are specified on the commandline
-	debugC(3, kQuuxDebugExample | kQuuxDebugExample2, "Example debug call two");
+	BitmapTest();
+//	AnimationTest();
 
 	return Common::kNoError;
 }
@@ -149,6 +144,31 @@ void GagEngine::ExtractCdf(const Common::String &a_fn)
 }
 
 
+void GagEngine::BitmapTest()
+{
+	Graphics::BitmapDecoder bitmap_decoder;
+
+	Common::File file;
+	file.open("Gag01/AUTORUN.BMP");
+
+	if(bitmap_decoder.loadStream(file))
+	{
+		const Graphics::Surface *bitmap_surface = bitmap_decoder.getSurface();
+		Graphics::Surface *surface = bitmap_surface->convertTo(_system->getScreenFormat());
+//		_system->copyRectToScreen((const byte *)surface->getPixels(), surface->pitch, 0, 0, surface->w, surface->h);
+
+
+		while(true)
+		{
+			_system->copyRectToScreen((const byte *)surface->getPixels(), surface->pitch, 0, 0, surface->w, surface->h);
+//			flushBlock();
+			_system->updateScreen();
+			_system->delayMillis(33);
+		}
+	}
+}
+
+
 void GagEngine::AnimationTest()
 {
 	Video::FlicDecoder flic_decoder;
@@ -156,17 +176,31 @@ void GagEngine::AnimationTest()
 
 	debug("video opened: %d", (int)success);
 
-	debug("%d", flic_decoder.getCurFrame());
 	debug("%d", flic_decoder.getFrameCount());
-	;
+
+	uint16 movie_width = flic_decoder.getWidth();
+	uint16 movie_height = flic_decoder.getHeight();
+
+	uint16 pitch = movie_width * flic_decoder.getPixelFormat().bytesPerPixel;
+
+	flic_decoder.start();
+	while(!flic_decoder.endOfVideo() && flic_decoder.isPlaying())
+	{
+		if(flic_decoder.needsUpdate())
+		{
+			const Graphics::Surface *frame = flic_decoder.decodeNextFrame();
+
+			if(frame != NULL)
+				_system->copyRectToScreen((const byte *)frame->getPixels(), pitch, 0, 0, movie_width, movie_height);
+		}
+
+		_system->updateScreen();
+		_system->delayMillis(flic_decoder.getTimeToNextFrame());
+	}
 
 	debug("video end");
+
 /*
-
-void AnimationSequencePlayer::getRGBPalette(int index) {
-	memcpy(_animationPalette, _flicPlayer[index].getPalette(), 3 * 256);
-}
-
 void AnimationSequencePlayer::openAnimation(int index, const char *fileName) {
 	if (!_flicPlayer[index].loadFile(fileName)) {
 		warning("Unable to open flc animation file '%s'", fileName);
@@ -176,7 +210,7 @@ void AnimationSequencePlayer::openAnimation(int index, const char *fileName) {
 	_flicPlayer[index].start();
 	_flicPlayer[index].decodeNextFrame();
 	if (index == 0) {
-		getRGBPalette(index);
+		memcpy(_animationPalette, _flicPlayer[index].getPalette(), 3 * 256);
 		_flicPlayer[index].copyDirtyRectsToBuffer(_offscreenBuffer, kScreenWidth);
 	}
 }
@@ -194,7 +228,7 @@ bool AnimationSequencePlayer::decodeNextAnimationFrame(int index, bool copyDirty
 	++_frameCounter;
 
 	if (index == 0 && _flicPlayer[index].hasDirtyPalette())
-		getRGBPalette(index);
+		memcpy(_animationPalette, _flicPlayer[index].getPalette(), 3 * 256);
 
 	return !_flicPlayer[index].endOfVideo();
 }

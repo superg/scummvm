@@ -37,6 +37,8 @@ private:
 	Common::RandomSource *_rnd;
 
 	void ExtractCdf(const Common::String &a_fn);
+
+	void BitmapTest();
 	void AnimationTest();
 };
 
