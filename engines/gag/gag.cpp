@@ -1,18 +1,14 @@
-#include "common/scummsys.h"
+#include <limits>
 
 #include "common/config-manager.h"
 #include "common/debug.h"
-#include "common/debug-channels.h"
-#include "common/error.h"
-#include "gui/EventRecorder.h"
+#include "common/events.h"
 #include "common/file.h"
-#include "common/fs.h"
+#include "common/system.h"
 #include "engines/util.h"
-
 #include "graphics/decoders/bmp.h"
-
-#include "graphics/surface.h"
 #include "graphics/palette.h"
+#include "graphics/surface.h"
 #include "video/flic_decoder.h"
 
 #include "cdf_archive.h"
@@ -23,93 +19,100 @@
 namespace Gag
 {
 
+const int GagEngine::m_SCREEN_WIDTH(640);
+const int GagEngine::m_SCREEN_HEIGHT(480);
+const Graphics::PixelFormat GagEngine::m_SCREEN_FORMAT(2, 5, 6, 5, 0, 11, 5, 0, 0);
+const int GagEngine::m_SCREEN_FPS(120);
+
+
 GagEngine::GagEngine(OSystem *syst)
 	: Engine(syst)
 {
-	// Put your engine in a sane state, but do nothing big yet;
-	// in particular, do not load data from files; rather, if you
-	// need to do such things, do them from run().
-
-	// Do not initialize graphics here
-
-	// However this is the place to specify all default directories
-	const Common::FSNode gameDataDir(ConfMan.get("path"));
-	SearchMan.addSubDirectoryMatching(gameDataDir, "sound");
-
-	// Here is the right place to set up the engine specific debug channels
-	DebugMan.addDebugChannel(kQuuxDebugExample, "example", "this is just an example for a engine specific debug channel");
-	DebugMan.addDebugChannel(kQuuxDebugExample2, "example2", "also an example");
-
-	// Don't forget to register your random source
-	_rnd = new Common::RandomSource("quux");
-
-	debug("GagEngine::GagEngine");
+	;
 }
 
 
 GagEngine::~GagEngine()
 {
-	debug("GagEngine::~GagEngine");
 
-	// Dispose your resources here
-	delete _rnd;
-
-	// Remove all of our debug levels here
-	DebugMan.clearAllDebugChannels();
 }
 
 
 Common::Error GagEngine::run()
 {
-	// Initialize graphics using following:
+	Initialize();
 
-//	const Graphics::PixelFormat pixelFormat(2, 5, 6, 5, 0, 11, 5, 0, 0); // RGB 565
-//	initGraphics(640, 480, true, &pixelFormat);
-	initGraphics(640, 480, true);
+	Common::Error status(Run());
 
-	// You could use backend transactions directly as an alternative,
-	// but it isn't recommended, until you want to handle the error values
-	// from OSystem::endGFXTransaction yourself.
-	// This is just an example template:
-	//_system->beginGFXTransaction();
-	//	// This setup the graphics mode according to users seetings
-	//	initCommonGFX(false);
-	//
-	//	// Specify dimensions of game graphics window.
-	//	// In this example: 320x200
-	//	_system->initSize(320, 200);
-	//FIXME: You really want to handle
-	//OSystem::kTransactionSizeChangeFailed here
-	//_system->endGFXTransaction();
+	return status;
+}
 
-	// Create debugger console. It requires GFX to be initialized
-	_console = new Console(this);
 
-/*
-//	Common::Archive *archive = new Common::FSDirectory(ConfMan.get("path") + '/' + "Gag01", 1, false);
-	Common::Archive *archive = new CdfArchive("Gag01.cdf", false);
-	Common::SeekableReadStream *srstream = archive->createReadStreamForMember("VERSIOn.TXT");
+void GagEngine::Initialize()
+{
+	initGraphics(m_SCREEN_WIDTH, m_SCREEN_HEIGHT, true, &m_SCREEN_FORMAT);
 
-	if(srstream == NULL)
-	{
-		debug("error: failed to open file");
-	}
-	else
-	{
-		debug("file opened successfully");
-	}
-*/
+	//DEBUG
+	m_Archive.reset(new Common::FSDirectory(ConfMan.get("path") + '/' + "Gag01", 1, false));
 
-	//TODO: find out how to create directory
+//	m_Archive.reset(new CdfArchive("Gag01.cdf", false));
+
 //	ExtractCdf("Gag01.cdf");
 
-	// Additional setup.
-	debug("GagEngine::init");
+//	BitmapTest();
+	AnimationTest();
+}
 
-	BitmapTest();
-//	AnimationTest();
 
-	return Common::kNoError;
+Common::Error GagEngine::Run()
+{
+	Common::Error status;
+
+	do
+	{
+		// do periodic processing
+		uint32 time_start = _system->getMillis();
+		status = Update();
+		uint32 time_end = _system->getMillis();
+
+		// wrap around check
+		uint32 time_spent = time_end > time_start ? time_end - time_start : std::numeric_limits<uint32>::max() - time_start + time_end + 1;
+
+		// sleep remaining frame time
+		_system->delayMillis(1000 / m_SCREEN_FPS - time_spent);
+	}
+	while(status.getCode() == Common::kNoError && !shouldQuit());
+
+	return status;
+}
+
+
+Common::Error GagEngine::Update()
+{
+	Common::Error status(Common::kNoError);
+
+	Common::Event event;
+	_eventMan->pollEvent(event);
+	switch(event.type)
+	{
+	case Common::EVENT_KEYDOWN:
+		switch(event.kbd.keycode)
+		{
+		case Common::KEYCODE_q:
+			if(event.kbd.hasFlags(Common::KBD_CTRL))
+				quitGame();
+			break;
+
+		default:
+			;
+		}
+		break;
+
+	default:
+		;
+	}
+
+	return status;
 }
 
 
@@ -151,29 +154,15 @@ void GagEngine::ExtractCdf(const Common::String &a_fn)
 void GagEngine::BitmapTest()
 {
 	Graphics::BitmapDecoder bitmap_decoder;
-
-	Common::String aaa(ConfMan.get("path") + "/test.bmp");
-
 	Common::File file;
-	file.open("Gag01/AUTORUN.BMP");
-//	debug("open: %s", aaa.c_str());
-//	file.open("test.bmp");
-
+	file.open("AUTORUN.BMP", *m_Archive);
 	if(bitmap_decoder.loadStream(file))
 	{
-		const Graphics::Surface *bitmap_surface = bitmap_decoder.getSurface();
-		Graphics::Surface *surface = bitmap_surface->convertTo(_system->getScreenFormat(), bitmap_decoder.getPalette());
-//		_system->copyRectToScreen((const byte *)surface->getPixels(), surface->pitch, 0, 0, surface->w, surface->h);
-		_system->getPaletteManager()->setPalette(bitmap_decoder.getPalette(), 0, bitmap_decoder.getPaletteColorCount());
-
-
-		while(true)
-		{
-			_system->copyRectToScreen((const byte *)surface->getPixels(), surface->pitch, 0, 0, surface->w, surface->h);
-//			flushBlock();
-			_system->updateScreen();
-			_system->delayMillis(33);
-		}
+		Graphics::Surface *surface = bitmap_decoder.getSurface()->convertTo(_system->getScreenFormat(), bitmap_decoder.getPalette());
+		_system->copyRectToScreen((const byte *)surface->getPixels(), surface->pitch, 0, 0, surface->w, surface->h);
+		_system->updateScreen();
+		surface->free();
+		delete surface;
 	}
 }
 
@@ -181,75 +170,30 @@ void GagEngine::BitmapTest()
 void GagEngine::AnimationTest()
 {
 	Video::FlicDecoder flic_decoder;
-	bool success = flic_decoder.loadFile("Gag01/CP0402.FLC");
-
-	debug("video opened: %d", (int)success);
-
-	debug("%d", flic_decoder.getFrameCount());
-
-	uint16 movie_width = flic_decoder.getWidth();
-	uint16 movie_height = flic_decoder.getHeight();
-
-	uint16 pitch = movie_width * flic_decoder.getPixelFormat().bytesPerPixel;
-
-	flic_decoder.start();
-	while(!flic_decoder.endOfVideo() && flic_decoder.isPlaying())
+//GGG	if(flic_decoder.loadFile("CP0402.FLC", *m_Archive))
+	if(flic_decoder.loadFile("Gag01/CP0402.FLC"))
 	{
-		if(flic_decoder.needsUpdate())
+		debug("frames count: %d", flic_decoder.getFrameCount());
+
+		flic_decoder.start();
+		while(!flic_decoder.endOfVideo() && flic_decoder.isPlaying())
 		{
-			const Graphics::Surface *frame = flic_decoder.decodeNextFrame();
+			if(flic_decoder.needsUpdate())
+			{
+				const Graphics::Surface *video_surface = flic_decoder.decodeNextFrame();
+				if(video_surface != nullptr)
+				{
+					Graphics::Surface *surface = video_surface->convertTo(_system->getScreenFormat(), flic_decoder.getPalette());
+					_system->copyRectToScreen((const byte *)surface->getPixels(), surface->pitch, 0, 0, surface->w, surface->h);
+					_system->updateScreen();
+					surface->free();
+					delete surface;
+				}
+			}
 
-			if(frame != NULL)
-				_system->copyRectToScreen((const byte *)frame->getPixels(), pitch, 0, 0, movie_width, movie_height);
+			_system->delayMillis(flic_decoder.getTimeToNextFrame());
 		}
-
-		_system->updateScreen();
-		_system->delayMillis(flic_decoder.getTimeToNextFrame());
 	}
-
-	debug("video end");
-
-/*
-void AnimationSequencePlayer::openAnimation(int index, const char *fileName) {
-	if (!_flicPlayer[index].loadFile(fileName)) {
-		warning("Unable to open flc animation file '%s'", fileName);
-		_seqNum = 1;
-		return;
-	}
-	_flicPlayer[index].start();
-	_flicPlayer[index].decodeNextFrame();
-	if (index == 0) {
-		memcpy(_animationPalette, _flicPlayer[index].getPalette(), 3 * 256);
-		_flicPlayer[index].copyDirtyRectsToBuffer(_offscreenBuffer, kScreenWidth);
-	}
-}
-
-bool AnimationSequencePlayer::decodeNextAnimationFrame(int index, bool copyDirtyRects) {
-	const ::Graphics::Surface *surface = _flicPlayer[index].decodeNextFrame();
-
-	if (!copyDirtyRects) {
-		for (uint16 y = 0; (y < surface->h) && (y < kScreenHeight); y++)
-			memcpy(_offscreenBuffer + y * kScreenWidth, (const byte *)surface->getBasePtr(0, y), surface->w);
-	} else {
-		_flicPlayer[index].copyDirtyRectsToBuffer(_offscreenBuffer, kScreenWidth);
-	}
-
-	++_frameCounter;
-
-	if (index == 0 && _flicPlayer[index].hasDirtyPalette())
-		memcpy(_animationPalette, _flicPlayer[index].getPalette(), 3 * 256);
-
-	return !_flicPlayer[index].endOfVideo();
-}
-
-
-	if (_flicPlayer[0].getCurFrame() >= 115) {
-		surface = _flicPlayer[1].decodeNextFrame();
-		if (_flicPlayer[1].endOfVideo())
-			_flicPlayer[1].rewind();
-	}
-
-*/
 }
 
 }
