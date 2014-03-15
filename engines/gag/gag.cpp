@@ -12,7 +12,12 @@
 #include "video/flic_decoder.h"
 
 #include "cdf_archive.h"
+#include "gag_flic_decoder.h"
 #include "gag.h"
+
+
+//GGG
+#include <vector>
 
 
 
@@ -53,7 +58,7 @@ void GagEngine::Initialize()
 	initGraphics(m_SCREEN_WIDTH, m_SCREEN_HEIGHT, true, &m_SCREEN_FORMAT);
 
 	//DEBUG
-	m_Archive.reset(new Common::FSDirectory(ConfMan.get("path") + '/' + "Gag01", 1, false));
+	m_Archive.reset(new Common::FSDirectory(ConfMan.get("path") + '/' + "Gag01", 2, false));
 
 //	m_Archive.reset(new CdfArchive("Gag01.cdf", false));
 
@@ -61,6 +66,7 @@ void GagEngine::Initialize()
 
 //	BitmapTest();
 	AnimationTest();
+//	AnimationTuckerTest();
 }
 
 
@@ -169,29 +175,85 @@ void GagEngine::BitmapTest()
 
 void GagEngine::AnimationTest()
 {
-	Video::FlicDecoder flic_decoder;
-//GGG	if(flic_decoder.loadFile("CP0402.FLC", *m_Archive))
-	if(flic_decoder.loadFile("Gag01/CP0402.FLC"))
+	Common::ArchiveMemberList member_list;
+	m_Archive->listMembers(member_list);
+	for(Common::ArchiveMemberList::iterator it = member_list.begin(); it != member_list.end(); ++it)
 	{
-		debug("frames count: %d", flic_decoder.getFrameCount());
+		if(!(*it)->getName().hasSuffix(".FLC"))
+			continue;
 
-		flic_decoder.start();
-		while(!flic_decoder.endOfVideo() && flic_decoder.isPlaying())
+		debug("playing: %s", (*it)->getName().c_str());
+
+		TestPlayAnimation((*it)->getName());
+	}
+
+	quitGame();
+}
+
+
+void GagEngine::AnimationTuckerTest()
+{
+	std::vector<Common::String> tucker_flics;
+	tucker_flics.push_back("tucker/BACKGRND.FLC");
+	tucker_flics.push_back("tucker/BUDTTLE2.FLC");
+	tucker_flics.push_back("tucker/COGBACK.FLC");
+	tucker_flics.push_back("tucker/INTRO1.FLC");
+	tucker_flics.push_back("tucker/INTRO2.FLC");
+	tucker_flics.push_back("tucker/INTRO3.FLC");
+	tucker_flics.push_back("tucker/MACHINE.FLC");
+	tucker_flics.push_back("tucker/MERIT.FLC");
+
+	for(size_t i = 0; i < tucker_flics.size(); ++i)
+	{
+		debug("playing: %s", tucker_flics[i].c_str());
+
+		TestPlayAnimation(tucker_flics[i]);
+	}
+
+	quitGame();
+}
+
+
+#define ANIMATION_FAST_TEST
+
+
+void GagEngine::TestPlayAnimation(Common::String fn)
+{
+	// file will be freed inside flic_decoder
+	Common::File *file = new Common::File;
+	if(file->open(fn, *m_Archive))
+	{
+		GagFlicDecoder flic_decoder;
+
+		//NOTE: VideoDecoder frees stream on destruction
+		if(flic_decoder.loadStream(file))
 		{
-			if(flic_decoder.needsUpdate())
+			flic_decoder.start();
+			while(!flic_decoder.endOfVideo() && flic_decoder.isPlaying())
 			{
-				const Graphics::Surface *video_surface = flic_decoder.decodeNextFrame();
-				if(video_surface != nullptr)
+#ifndef ANIMATION_FAST_TEST
+				if(flic_decoder.needsUpdate())
+#endif
 				{
-					Graphics::Surface *surface = video_surface->convertTo(_system->getScreenFormat(), flic_decoder.getPalette());
-					_system->copyRectToScreen((const byte *)surface->getPixels(), surface->pitch, 0, 0, surface->w, surface->h);
-					_system->updateScreen();
-					surface->free();
-					delete surface;
+					const Graphics::Surface *video_surface = flic_decoder.decodeNextFrame();
+					if(video_surface != nullptr)
+					{
+						Graphics::Surface *surface = video_surface->convertTo(_system->getScreenFormat(), flic_decoder.getPalette());
+						_system->copyRectToScreen((const byte *)surface->getPixels(), surface->pitch, 0, 0, surface->w, surface->h);
+						_system->updateScreen();
+						surface->free();
+						delete surface;
+					}
 				}
-			}
 
-			_system->delayMillis(flic_decoder.getTimeToNextFrame());
+#ifndef ANIMATION_FAST_TEST
+				_system->delayMillis(flic_decoder.getTimeToNextFrame());
+#endif
+			}
+		}
+		else
+		{
+			debug("error loading file");
 		}
 	}
 }

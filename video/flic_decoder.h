@@ -43,6 +43,7 @@ namespace Video {
  *
  * Video decoder used in engines:
  *  - tucker
+ *  - gag
  */
 class FlicDecoder : public VideoDecoder {
 public:
@@ -102,6 +103,9 @@ private:
 		void decodeDeltaFLC(uint8 *data);
 		void unpackPalette(uint8 *mem);
 	};
+
+	template<typename T>
+	bool init(Common::SeekableReadStream *stream);
 };
 
 } // End of namespace Video

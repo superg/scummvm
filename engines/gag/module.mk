@@ -3,7 +3,8 @@ MODULE := engines/gag
 MODULE_OBJS := \
 	cdf_archive.o \
 	detection.o \
-	gag.o
+	gag.o \
+	gag_flic_decoder.o
 
 
 # This module can be built as a plugin

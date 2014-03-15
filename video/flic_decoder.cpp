@@ -38,28 +38,7 @@ FlicDecoder::~FlicDecoder() {
 }
 
 bool FlicDecoder::loadStream(Common::SeekableReadStream *stream) {
-	close();
-
-	/* uint32 frameSize = */ stream->readUint32LE();
-	uint16 frameType = stream->readUint16LE();
-
-	// Check FLC magic number
-	if (frameType != 0xAF12) {
-		warning("FlicDecoder::loadStream(): attempted to load non-FLC data (type = 0x%04X)", frameType);
-		return false;
-	}
-
-	uint16 frameCount = stream->readUint16LE();
-	uint16 width = stream->readUint16LE();
-	uint16 height = stream->readUint16LE();
-	uint16 colorDepth = stream->readUint16LE();
-	if (colorDepth != 8) {
-		warning("FlicDecoder::loadStream(): attempted to load an FLC with a palette of color depth %d. Only 8-bit color palettes are supported", colorDepth);
-		return false;
-	}
-
-	addTrack(new FlicVideoTrack(stream, frameCount, width, height));
-	return true;
+	return init<FlicVideoTrack>(stream);
 }
 
 const Common::List<Common::Rect> *FlicDecoder::getDirtyRects() const {
@@ -83,6 +62,33 @@ void FlicDecoder::copyDirtyRectsToBuffer(uint8 *dst, uint pitch) {
 
 	if (track)
 		((FlicVideoTrack *)track)->copyDirtyRectsToBuffer(dst, pitch);
+}
+
+template<typename T>
+bool FlicDecoder::init(Common::SeekableReadStream *stream)
+{
+	close();
+
+	/* uint32 frameSize = */ stream->readUint32LE();
+	uint16 frameType = stream->readUint16LE();
+
+	// Check FLC magic number
+	if (frameType != 0xAF12) {
+		warning("FlicDecoder::loadStream(): attempted to load non-FLC data (type = 0x%04X)", frameType);
+		return false;
+	}
+
+	uint16 frameCount = stream->readUint16LE();
+	uint16 width = stream->readUint16LE();
+	uint16 height = stream->readUint16LE();
+	uint16 colorDepth = stream->readUint16LE();
+	if (colorDepth != 8) {
+		warning("FlicDecoder::loadStream(): attempted to load an FLC with a palette of color depth %d. Only 8-bit color palettes are supported", colorDepth);
+		return false;
+	}
+
+	addTrack(new T(stream, frameCount, width, height));
+	return true;
 }
 
 FlicDecoder::FlicVideoTrack::FlicVideoTrack(Common::SeekableReadStream *stream, uint16 frameCount, uint16 width, uint16 height) {
@@ -160,72 +166,75 @@ const Graphics::Surface *FlicDecoder::FlicVideoTrack::decodeNextFrame() {
 	// Read chunk
 	uint32 frameSize = _fileStream->readUint32LE();
 	uint16 frameType = _fileStream->readUint16LE();
-	uint16 chunkCount = 0;
 
-	switch (frameType) {
-	case FRAME_TYPE:
-		{
-			chunkCount = _fileStream->readUint16LE();
-			// Note: The overridden delay is a 16-bit integer (word), whereas the normal delay is a 32-bit integer (dword)
-			// the frame delay is the FLIC "speed", in milliseconds.
-			uint16 newFrameDelay = _fileStream->readUint16LE();	// "speed", in milliseconds
-			if (newFrameDelay > 0)
-				_frameDelay = newFrameDelay;
+	if(frameType != FRAME_TYPE)
+		error("FlicDecoder::decodeNextFrame(): unknown main chunk type (type = 0x%02X)", frameType);
 
-			_fileStream->readUint16LE();	// reserved, always 0
-			uint16 newWidth = _fileStream->readUint16LE();
-			uint16 newHeight = _fileStream->readUint16LE();
+	uint16 chunkCount = _fileStream->readUint16LE();
+	// Note: The overridden delay is a 16-bit integer (word), whereas the normal delay is a 32-bit integer (dword)
+	// the frame delay is the FLIC "speed", in milliseconds.
+	uint16 newFrameDelay = _fileStream->readUint16LE();	// "speed", in milliseconds
+	if (newFrameDelay)
+		_frameDelay = newFrameDelay;
 
-			if ((newWidth != 0) && (newHeight != 0)) {
-				if (newWidth == 0)
-					newWidth = _surface->w;
-				if (newHeight == 0)
-					newHeight = _surface->h;
+	_fileStream->readUint16LE();	// reserved, always 0
+	uint16 newWidth = _fileStream->readUint16LE();
+	uint16 newHeight = _fileStream->readUint16LE();
 
-				_surface->free();
-				delete _surface;
-				_surface = new Graphics::Surface();
-				_surface->create(newWidth, newHeight, Graphics::PixelFormat::createFormatCLUT8());
-			}
-		}
-		break;
-	default:
-		error("FlicDecoder::decodeFrame(): unknown main chunk type (type = 0x%02X)", frameType);
-		break;
-	 }
+	if (newWidth || newHeight) {
+		if (!newWidth)
+			newWidth = _surface->w;
+		if (!newHeight)
+			newHeight = _surface->h;
 
-	// Read subchunks
-	if (frameType == FRAME_TYPE) {
+		_surface->free();
+		delete _surface;
+		_surface = new Graphics::Surface();
+		_surface->create(newWidth, newHeight, Graphics::PixelFormat::createFormatCLUT8());
+	}
+
+	// don't include header
+	uint32 frameDataSize = frameSize - 16;
+	if(frameDataSize > 0)
+	{
+		uint8 *frameData = new uint8[frameDataSize];
+		if(_fileStream->read(frameData, frameDataSize) != frameDataSize)
+			error("FlicDecoder::decodeNextFrame(): FLC file is corrupted");
+
+		// Read subchunks
+		uint8 *subchunkData = frameData;
 		for (uint32 i = 0; i < chunkCount; ++i) {
-			frameSize = _fileStream->readUint32LE();
-			frameType = _fileStream->readUint16LE();
-			uint8 *data = new uint8[frameSize - 6];
-			_fileStream->read(data, frameSize - 6);
+			uint32 subchunkSize = READ_LE_UINT32(subchunkData);
+			subchunkData += sizeof(subchunkSize);
+			uint16 subchunkType = READ_LE_UINT16(subchunkData);
+			subchunkData += sizeof(subchunkType);
 
-			switch (frameType) {
+			switch (subchunkType) {
 			case FLI_SETPAL:
-				unpackPalette(data);
+				unpackPalette(subchunkData);
 				_dirtyPalette = true;
 				break;
 			case FLI_SS2:
-				decodeDeltaFLC(data);
+				decodeDeltaFLC(subchunkData);
 				break;
 			case FLI_BRUN:
-				decodeByteRun(data);
+				decodeByteRun(subchunkData);
 				break;
 			case FLI_COPY:
-				copyFrame(data);
+				copyFrame(subchunkData);
 				break;
 			case PSTAMP:
 				/* PSTAMP - skip for now */
 				break;
 			default:
-				error("FlicDecoder::decodeNextFrame(): unknown subchunk type (type = 0x%02X)", frameType);
+				error("FlicDecoder::decodeNextFrame(): unknown subchunk type (type = 0x%02X)", subchunkType);
 				break;
-			 }
+				}
 
-			delete[] data;
+			subchunkData += subchunkType == FLI_COPY ? getWidth() * getHeight() : subchunkSize - 6;
 		}
+
+		delete [] frameData;
 	}
 
 	_curFrame++;
