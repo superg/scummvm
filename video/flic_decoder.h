@@ -26,6 +26,8 @@
 #include "video/video_decoder.h"
 #include "common/list.h"
 #include "common/rect.h"
+#include "common/stream.h"
+#include "graphics/surface.h"
 
 namespace Common {
 class SeekableReadStream;
@@ -50,17 +52,17 @@ public:
 	FlicDecoder();
 	virtual ~FlicDecoder();
 
-	bool loadStream(Common::SeekableReadStream *stream);
+	virtual bool loadStream(Common::SeekableReadStream *stream);
 
 	const Common::List<Common::Rect> *getDirtyRects() const;
 	void clearDirtyRects();
 	void copyDirtyRectsToBuffer(uint8 *dst, uint pitch);
 
-private:
+protected:
 	class FlicVideoTrack : public VideoTrack {
 	public:
 		FlicVideoTrack(Common::SeekableReadStream *stream, uint16 frameCount, uint16 width, uint16 height);
-		~FlicVideoTrack();
+		virtual ~FlicVideoTrack();
 
 		bool endOfTrack() const;
 		bool isRewindable() const { return true; }
@@ -80,9 +82,12 @@ private:
 		void clearDirtyRects() { _dirtyRects.clear(); }
 		void copyDirtyRectsToBuffer(uint8 *dst, uint pitch);
 
+	protected:
+		Graphics::Surface *_surface;
+		Common::List<Common::Rect> _dirtyRects;
+
 	private:
 		Common::SeekableReadStream *_fileStream;
-		Graphics::Surface *_surface;
 
 		int _curFrame;
 		bool _atRingFrame;
@@ -96,16 +101,39 @@ private:
 		uint32 _frameDelay, _startFrameDelay;
 		uint32 _nextFrameStartTime;
 
-		Common::List<Common::Rect> _dirtyRects;
-
 		void copyFrame(uint8 *data);
 		void decodeByteRun(uint8 *data);
 		void decodeDeltaFLC(uint8 *data);
 		void unpackPalette(uint8 *mem);
+		virtual void decodeExtended(uint16 subchunkType, uint8 *data, uint32 dataSize);
 	};
 
 	template<typename T>
-	bool init(Common::SeekableReadStream *stream);
+	bool init(Common::SeekableReadStream *stream)
+	{
+		close();
+
+		/* uint32 frameSize = */ stream->readUint32LE();
+		uint16 frameType = stream->readUint16LE();
+
+		// Check FLC magic number
+		if (frameType != 0xAF12) {
+			warning("FlicDecoder::loadStream(): attempted to load non-FLC data (type = 0x%04X)", frameType);
+			return false;
+		}
+
+		uint16 frameCount = stream->readUint16LE();
+		uint16 width = stream->readUint16LE();
+		uint16 height = stream->readUint16LE();
+		uint16 colorDepth = stream->readUint16LE();
+		if (colorDepth != 8) {
+			warning("FlicDecoder::loadStream(): attempted to load an FLC with a palette of color depth %d. Only 8-bit color palettes are supported", colorDepth);
+			return false;
+		}
+
+		addTrack(new T(stream, frameCount, width, height));
+		return true;
+	}
 };
 
 } // End of namespace Video

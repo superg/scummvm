@@ -175,11 +175,15 @@ void GagEngine::BitmapTest()
 
 void GagEngine::AnimationTest()
 {
+//	TestPlayAnimation("LOGO1.MVZ");
+
 	Common::ArchiveMemberList member_list;
 	m_Archive->listMembers(member_list);
 	for(Common::ArchiveMemberList::iterator it = member_list.begin(); it != member_list.end(); ++it)
 	{
-		if(!(*it)->getName().hasSuffix(".FLC"))
+//		if(!(*it)->getName().hasSuffix(".FLC"))
+//		if(!(*it)->getName().hasSuffix(".MOV"))
+		if(!(*it)->getName().hasSuffix(".MVZ"))
 			continue;
 
 		debug("playing: %s", (*it)->getName().c_str());
@@ -214,7 +218,7 @@ void GagEngine::AnimationTuckerTest()
 }
 
 
-#define ANIMATION_FAST_TEST
+//#define ANIMATION_FAST_TEST
 
 
 void GagEngine::TestPlayAnimation(Common::String fn)
