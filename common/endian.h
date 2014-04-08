@@ -408,4 +408,40 @@ inline uint32 READ_BE_UINT24(const void *ptr) {
 #define READ_UINT24(a) READ_BE_UINT24(a)
 #endif
 
+template<typename T>
+void le2sys(T &arg)
+{
+	switch(sizeof(arg))
+	{
+	case sizeof(uint16):
+		arg = FROM_LE_16(arg);
+		break;
+
+	case sizeof(uint32):
+		arg = FROM_LE_32(arg);
+		break;
+
+	default:
+		;
+	}
+}
+
+template<typename T>
+void be2sys(T &arg)
+{
+	switch(sizeof(arg))
+	{
+	case sizeof(uint16):
+		arg = FROM_BE_16(arg);
+		break;
+
+	case sizeof(uint32):
+		arg = FROM_BE_32(arg);
+		break;
+
+	default:
+		;
+	}
+}
+
 #endif

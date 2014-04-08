@@ -19,10 +19,11 @@ public:
 	virtual bool loadStream(Common::SeekableReadStream *stream);
 
 private:
+
 	class GagFlicVideoTrack : public FlicVideoTrack
 	{
 	public:
-		GagFlicVideoTrack(Common::SeekableReadStream *stream, uint16 frameCount, uint16 width, uint16 height);
+		GagFlicVideoTrack(const FlicHeader &a_flic_header, Common::SeekableReadStream *stream);
 		virtual ~GagFlicVideoTrack();
 
 	private:
@@ -41,6 +42,21 @@ private:
 
 			void Fix();
 		};
+
+		struct WavFmtHeader
+		{
+			uint32 wave_id;          // WAVE ID: "WAVE"
+			uint32 chunk_id;         // Chunk ID: "fmt "
+			uint32 chunk_size;       // Chunk size: 16 or 18 or 40
+			uint16 wave_type;        // Format code
+			uint16 channels_count;   // Number of interleaved channels
+			uint32 sample_rate;      // Sampling rate (blocks per second)
+			uint32 data_rate;        // Data rate
+			uint16 block_align;      // Data block size (bytes)
+			uint16 bits_per_sec;     // Bits per sample
+
+			void Fix();
+		};
 #include "common/pack-end.h"
 
 		enum GagSubchunkType
@@ -53,9 +69,20 @@ private:
 			GAG_SND_CTRL = 1536    // GAG start sound command, includes WAV header
 		};
 
-		virtual void decodeExtended(uint16 subchunkType, uint8 *data, uint32 dataSize);
-		void DecodeGagVideoMVZ(const uint8 *a_data, uint32 a_data_size, bool a_mvz8);
+		virtual void decodeExtended(uint16 a_type, const uint8 *a_data);
+		void DecodeGagVideoMVZ(const MvzFrameHeader &a_header, const uint8 *a_data, bool a_mvz8);
 	};
+
+	class GagFlicAudioTrack : public AudioTrack
+	{
+	public:
+		GagFlicAudioTrack();
+		virtual ~GagFlicAudioTrack();
+
+		virtual Audio::AudioStream *getAudioStream() const;
+	};
+
+	static const uint _TRACK_AUDIO;
 };
 
 }

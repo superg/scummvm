@@ -4,6 +4,7 @@
 
 
 #include "common/archive.h"
+#include "common/endian.h"
 #include "common/file.h"
 #include "common/hashmap.h"
 #include "common/str.h"
@@ -36,9 +37,9 @@ private:
 
 		void Fix()
 		{
-			index_size_enc = FROM_LE_32(index_size_enc);
-			files_count = FROM_LE_32(files_count);
-			size_total_dec = FROM_LE_32(size_total_dec);
+			le2sys(index_size_enc);
+			le2sys(files_count);
+			le2sys(size_total_dec);
 		}
 	};
 
@@ -51,8 +52,8 @@ private:
 
 		void Fix()
 		{
-			offset = FROM_LE_32(offset);
-			size_dec = FROM_LE_32(size_dec);
+			le2sys(offset);
+			le2sys(size_dec);
 		}
 	};
 #include "common/pack-end.h"

@@ -39,8 +39,10 @@ private:
 	//DEBUG
 	void BitmapTest();
 	void AnimationTest();
-	void AnimationTuckerTest();
 	void TestPlayAnimation(Common::String fn);
+
+	void AnimationTuckerTest();
+	void TestTuckerPlayAnimation(Common::String fn);
 };
 
 }

@@ -23,20 +23,12 @@
 #ifndef VIDEO_FLICDECODER_H
 #define VIDEO_FLICDECODER_H
 
-#include "video/video_decoder.h"
+#include "common/endian.h"
 #include "common/list.h"
 #include "common/rect.h"
 #include "common/stream.h"
 #include "graphics/surface.h"
-
-namespace Common {
-class SeekableReadStream;
-}
-
-namespace Graphics {
-struct PixelFormat;
-struct Surface;
-}
+#include "video/video_decoder.h"
 
 namespace Video {
 
@@ -53,89 +45,197 @@ public:
 	virtual ~FlicDecoder();
 
 	virtual bool loadStream(Common::SeekableReadStream *stream);
+	virtual void close();
 
-	const Common::List<Common::Rect> *getDirtyRects() const;
+	const Common::List<Common::Rect> &getDirtyRects() const;
 	void clearDirtyRects();
 	void copyDirtyRectsToBuffer(uint8 *dst, uint pitch);
 
 protected:
+#include "common/pack-start.h"
+	struct FlicHeader {
+		uint32 size;            // size of flic including this header
+		uint16 type;            // either _TYPE_FLI or _TYPE_FLC below
+		uint16 frames;          // number of frames in flic
+		uint16 width;           // flic width in pixels
+		uint16 height;          // flic height in pixels
+		uint16 depth;           // bits per pixel (always 8 now)
+		uint16 flags;           // _FLI_FINISHED or _FLI_LOOPED ideally
+		uint32 delay;           // delay between frames
+		uint16 reserved1;       // set to zero
+		uint32 created;         // date of flic creation (FLC only)
+		uint32 creator;         // serial # of flic creator (FLC only)
+		uint32 updated;         // date of flic update (FLC only)
+		uint32 updater;         // serial # of flic updater (FLC only)
+		uint16 aspect_dx;       // width of square rectangle (FLC only)
+		uint16 aspect_dy;       // height of square rectangle (FLC only)
+		 uint8 reserved2[38];   // set to zero
+		uint32 oframe1;         // offset to frame 1 (FLC only)
+		uint32 oframe2;         // offset to frame 2 (FLC only)
+		 uint8 reserved3[40];   // set to zero
+
+		void fix() {
+			le2sys(size);
+			le2sys(type);
+			le2sys(frames);
+			le2sys(width);
+			le2sys(height);
+			le2sys(depth);
+			le2sys(delay);
+			le2sys(created);
+			le2sys(creator);
+			le2sys(updated);
+			le2sys(updater);
+			le2sys(aspect_dx);
+			le2sys(aspect_dy);
+			le2sys(oframe1);
+			le2sys(oframe2);
+		}
+	};
+
+	struct FrameHeader {
+		uint32 size;          // size of frame including header
+		uint16 type;          // always m_TYPE_PREFIX or m_TYPE_FRAME
+		uint16 chunks;        // number of chunks in frame
+		uint16 delay;         // EXTENDED: delay override
+		uint16 reserved;      // EXTENDED: always 0
+		uint16 width;         // EXTENDED: width override
+		uint16 height;        // EXTENDED: height override
+
+		void fix() {
+			le2sys(size);
+			le2sys(type);
+			le2sys(chunks);
+			le2sys(delay);
+			le2sys(width);
+			le2sys(height);
+		}
+	};
+
+	struct ChunkHeader {
+		uint32 size;   // size of chunk including header
+		uint16 type;   // value from ChunkTypes below
+
+		void fix() {
+			le2sys(size);
+			le2sys(type);
+		}
+	};
+#include "common/pack-end.h"
+
 	class FlicVideoTrack : public VideoTrack {
 	public:
-		FlicVideoTrack(Common::SeekableReadStream *stream, uint16 frameCount, uint16 width, uint16 height);
+		FlicVideoTrack(const FlicHeader &a_flic_header, Common::SeekableReadStream *stream);
 		virtual ~FlicVideoTrack();
 
-		bool endOfTrack() const;
-		bool isRewindable() const { return true; }
-		bool rewind();
+		// inherited from Track
+		virtual bool isRewindable() const;
+		virtual bool rewind();
 
-		uint16 getWidth() const;
-		uint16 getHeight() const;
-		Graphics::PixelFormat getPixelFormat() const;
-		int getCurFrame() const { return _curFrame; }
-		int getFrameCount() const { return _frameCount; }
-		uint32 getNextFrameStartTime() const { return _nextFrameStartTime; }
-		const Graphics::Surface *decodeNextFrame();
-		const byte *getPalette() const { _dirtyPalette = false; return _palette; }
-		bool hasDirtyPalette() const { return _dirtyPalette; }
+		// inherited from VideoTrack
+		virtual uint16 getWidth() const;
+		virtual uint16 getHeight() const;
+		virtual Graphics::PixelFormat getPixelFormat() const;
+		virtual int getCurFrame() const;
+		virtual int getFrameCount() const;
+		virtual uint32 getNextFrameStartTime() const;
+		virtual const Graphics::Surface *decodeNextFrame();
+		virtual const byte *getPalette() const;
+		virtual bool hasDirtyPalette() const;
 
-		const Common::List<Common::Rect> *getDirtyRects() const { return &_dirtyRects; }
-		void clearDirtyRects() { _dirtyRects.clear(); }
+		const Common::List<Common::Rect> &getDirtyRects() const;
+		void clearDirtyRects();
 		void copyDirtyRectsToBuffer(uint8 *dst, uint pitch);
+
+		void reallocateSurface(uint16 a_width, uint16 a_height);
+		bool loop();
+		void setDelay(uint32 delay);
+		void updateFrame();
+
+		void decodeColor256(const uint8 *a_data);
+		void decodeBlack(const uint8 *a_data);
+		void decodeLiteral(const uint8 *a_data);
+		void decodeByteRun(const uint8 *a_data);
+		void decodeDeltaFLC(const uint8 *a_data);
+		virtual void decodeExtended(uint16 a_type, const uint8 *a_data);
 
 	protected:
 		Graphics::Surface *_surface;
 		Common::List<Common::Rect> _dirtyRects;
 
 	private:
-		Common::SeekableReadStream *_fileStream;
+		Common::SeekableReadStream *_stream;
+		uint32 _frameCount;
+		uint32 _startFrameDelay;
+		uint16 _offsetFrame[2];
 
-		int _curFrame;
-		bool _atRingFrame;
-
-		uint16 _offsetFrame1;
-		uint16 _offsetFrame2;
 		byte *_palette;
 		mutable bool _dirtyPalette;
 
-		uint32 _frameCount;
-		uint32 _frameDelay, _startFrameDelay;
+		int _curFrame;
 		uint32 _nextFrameStartTime;
+		uint32 _frameDelay;
 
-		void copyFrame(uint8 *data);
-		void decodeByteRun(uint8 *data);
-		void decodeDeltaFLC(uint8 *data);
-		void unpackPalette(uint8 *mem);
-		virtual void decodeExtended(uint16 subchunkType, uint8 *data, uint32 dataSize);
+		void reset(uint frame);
 	};
 
 	template<typename T>
-	bool init(Common::SeekableReadStream *stream)
-	{
+	bool init(Common::SeekableReadStream *stream) {
 		close();
+		_fileStream = stream;
 
-		/* uint32 frameSize = */ stream->readUint32LE();
-		uint16 frameType = stream->readUint16LE();
-
-		// Check FLC magic number
-		if (frameType != 0xAF12) {
-			warning("FlicDecoder::loadStream(): attempted to load non-FLC data (type = 0x%04X)", frameType);
-			return false;
+		FlicHeader flic_header;
+		bool success = readHeader(flic_header, _fileStream);
+		if (success) {
+			_videoTrack = new T(flic_header, _fileStream);
+			addTrack(_videoTrack);
 		}
 
-		uint16 frameCount = stream->readUint16LE();
-		uint16 width = stream->readUint16LE();
-		uint16 height = stream->readUint16LE();
-		uint16 colorDepth = stream->readUint16LE();
-		if (colorDepth != 8) {
-			warning("FlicDecoder::loadStream(): attempted to load an FLC with a palette of color depth %d. Only 8-bit color palettes are supported", colorDepth);
-			return false;
-		}
-
-		addTrack(new T(stream, frameCount, width, height));
-		return true;
+		return success;
 	}
+
+private:
+	enum DeltaOpcodeType {
+		DOT_PACKETCOUNT,
+		DOT_UNDEFINED,
+		DOT_LASTPIXEL,
+		DOT_LINESKIPCOUNT
+	};
+
+	enum ChunkType {
+		COLOR_256    =    4,   // 256 level color pallette info (FLC only)
+		DELTA_FLC    =    7,   // word-oriented delta compression (FLC only)
+		COLOR_64     =   11,   // 64 level color pallette info
+		DELTA_FLI    =   12,   // byte-oriented delta compression
+		BLACK        =   13,   // whole frame is color 0
+		BYTE_RUN     =   15,   // byte run-length compression
+		LITERAL      =   16,   // uncompressed pixels
+		PSTAMP       =   18    // "Postage stamp" chunk (FLC only)
+	};
+
+	// FlicHeader::type
+	static const uint16 _TYPE_FLI = 0xAF11;   // 320x200 .FLI type ID
+	static const uint16 _TYPE_FLC = 0xAF12;   // variable rez .FLC type ID
+
+	// FlicHeader::flags
+	static const uint16 _FLI_FINISHED = 0x0001;
+	static const uint16 _FLI_LOOPED   = 0x0002;
+
+	// FrameHeader::type
+	static const uint16 _TYPE_PREFIX = 0xF100;
+	static const uint16 _TYPE_FRAME  = 0xF1FA;
+
+	static const uint _FLC_PALETTE_SIZE = 256;
+	static const uint _FLC_PALETTE_ENTRY_SIZE = 3;
+
+	Common::SeekableReadStream *_fileStream;
+	FlicVideoTrack *_videoTrack;
+
+	virtual void readNextPacket();
+	bool readHeader(FlicHeader &flic_header, Common::SeekableReadStream *stream);
+	void decodeFrame(const FrameHeader &a_frame_header, const uint8 *a_data);
 };
 
-} // End of namespace Video
+}
 
 #endif

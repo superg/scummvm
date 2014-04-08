@@ -195,30 +195,7 @@ void GagEngine::AnimationTest()
 }
 
 
-void GagEngine::AnimationTuckerTest()
-{
-	std::vector<Common::String> tucker_flics;
-	tucker_flics.push_back("tucker/BACKGRND.FLC");
-	tucker_flics.push_back("tucker/BUDTTLE2.FLC");
-	tucker_flics.push_back("tucker/COGBACK.FLC");
-	tucker_flics.push_back("tucker/INTRO1.FLC");
-	tucker_flics.push_back("tucker/INTRO2.FLC");
-	tucker_flics.push_back("tucker/INTRO3.FLC");
-	tucker_flics.push_back("tucker/MACHINE.FLC");
-	tucker_flics.push_back("tucker/MERIT.FLC");
-
-	for(size_t i = 0; i < tucker_flics.size(); ++i)
-	{
-		debug("playing: %s", tucker_flics[i].c_str());
-
-		TestPlayAnimation(tucker_flics[i]);
-	}
-
-	quitGame();
-}
-
-
-//#define ANIMATION_FAST_TEST
+#define ANIMATION_FAST_TEST
 
 
 void GagEngine::TestPlayAnimation(Common::String fn)
@@ -253,6 +230,62 @@ void GagEngine::TestPlayAnimation(Common::String fn)
 #ifndef ANIMATION_FAST_TEST
 				_system->delayMillis(flic_decoder.getTimeToNextFrame());
 #endif
+			}
+		}
+		else
+		{
+			debug("error loading file");
+		}
+	}
+}
+
+
+void GagEngine::AnimationTuckerTest()
+{
+	std::vector<Common::String> tucker_flics;
+	tucker_flics.push_back("tucker/BACKGRND.FLC");
+	tucker_flics.push_back("tucker/BUDTTLE2.FLC");
+	tucker_flics.push_back("tucker/COGBACK.FLC");
+	tucker_flics.push_back("tucker/INTRO1.FLC");
+	tucker_flics.push_back("tucker/INTRO2.FLC");
+	tucker_flics.push_back("tucker/INTRO3.FLC");
+	tucker_flics.push_back("tucker/MACHINE.FLC");
+	tucker_flics.push_back("tucker/MERIT.FLC");
+
+	for(size_t i = 0; i < tucker_flics.size(); ++i)
+	{
+		debug("playing: %s", tucker_flics[i].c_str());
+
+		TestTuckerPlayAnimation(tucker_flics[i]);
+	}
+
+	quitGame();
+}
+
+
+void GagEngine::TestTuckerPlayAnimation(Common::String fn)
+{
+	// file will be freed inside flic_decoder
+	Common::File *file = new Common::File;
+	if(file->open(fn, *m_Archive))
+	{
+		Video::FlicDecoder flic_decoder;
+
+		//NOTE: VideoDecoder frees stream on destruction
+		if(flic_decoder.loadStream(file))
+		{
+			flic_decoder.start();
+			while(!flic_decoder.endOfVideo() && flic_decoder.isPlaying())
+			{
+				const Graphics::Surface *video_surface = flic_decoder.decodeNextFrame();
+				if(video_surface != nullptr)
+				{
+					Graphics::Surface *surface = video_surface->convertTo(_system->getScreenFormat(), flic_decoder.getPalette());
+					_system->copyRectToScreen((const byte *)surface->getPixels(), surface->pitch, 0, 0, surface->w, surface->h);
+					_system->updateScreen();
+					surface->free();
+					delete surface;
+				}
 			}
 		}
 		else
