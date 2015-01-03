@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -83,7 +83,7 @@ void BehaviorManager::updateBehaviors() {
 	if (!_isActive)
 		return;
 
-	debug(0, "BehaviorManager::updateBehaviors()");
+	debug(4, "BehaviorManager::updateBehaviors()");
 	for (uint i = 0; i < _behaviors.size(); i++) {
 		BehaviorInfo *beh = _behaviors[i];
 
@@ -122,7 +122,7 @@ void BehaviorManager::updateBehaviors() {
 }
 
 void BehaviorManager::updateBehavior(BehaviorInfo *behaviorInfo, BehaviorEntry *entry) {
-	debug(0, "BehaviorManager::updateBehavior() %d", entry->_itemsCount);
+	debug(4, "BehaviorManager::updateBehavior() %d", entry->_itemsCount);
 	for (int i = 0; i < entry->_itemsCount; i++) {
 		BehaviorEntryInfo *bhi = entry->_items[i];
 		if (!(bhi->_flags & 1)) {
@@ -144,7 +144,7 @@ void BehaviorManager::updateBehavior(BehaviorInfo *behaviorInfo, BehaviorEntry *
 }
 
 void BehaviorManager::updateStaticAniBehavior(StaticANIObject *ani, int delay, BehaviorEntry *bhe) {
-	debug(0, "BehaviorManager::updateStaticAniBehavior(%s)", transCyrillic((byte *)ani->_objectName));
+	debug(4, "BehaviorManager::updateStaticAniBehavior(%s)", transCyrillic((byte *)ani->_objectName));
 
 	MessageQueue *mq = 0;
 
@@ -236,7 +236,7 @@ void BehaviorInfo::clear() {
 }
 
 void BehaviorInfo::initAmbientBehavior(GameVar *var, Scene *sc) {
-	debug(0, "BehaviorInfo::initAmbientBehavior(%s)", transCyrillic((byte *)var->_varName));
+	debug(4, "BehaviorInfo::initAmbientBehavior(%s)", transCyrillic((byte *)var->_varName));
 
 	clear();
 	_itemsCount = 1;
@@ -260,7 +260,7 @@ void BehaviorInfo::initAmbientBehavior(GameVar *var, Scene *sc) {
 }
 
 void BehaviorInfo::initObjectBehavior(GameVar *var, Scene *sc, StaticANIObject *ani) {
-	debug(0, "BehaviorInfo::initObjectBehavior(%s)", transCyrillic((byte *)var->_varName));
+	debug(4, "BehaviorInfo::initObjectBehavior(%s)", transCyrillic((byte *)var->_varName));
 
 	clear();
 

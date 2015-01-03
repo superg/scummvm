@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -32,7 +32,7 @@
 
 #include "audio/mixer.h"
 
-#include "graphics/surface.h"
+#include "graphics/transparent_surface.h"
 
 #include "engines/engine.h"
 
@@ -60,6 +60,7 @@ class GameProject;
 class GameObject;
 class GlobalMessageQueueList;
 struct MessageHandler;
+class MessageQueue;
 struct MovTable;
 class MGM;
 class NGIArchive;
@@ -90,6 +91,7 @@ public:
 	GUI::Debugger *getDebugger() { return _console; }
 
 	void initialize();
+	void restartGame();
 
 	void setMusicAllowed(int val) { _musicAllowed = val; }
 
@@ -97,7 +99,6 @@ public:
 	const ADGameDescription *_gameDescription;
 	const char *getGameId() const;
 	Common::Platform getPlatform() const;
-	bool hasFeature(EngineFeature f) const;
 
 	Common::RandomSource *_rnd;
 
@@ -107,6 +108,7 @@ public:
 	void updateEvents();
 
 	Graphics::Surface _backgroundSurface;
+	Graphics::PixelFormat *_origFormat;
 
 	GameLoader *_gameLoader;
 	GameProject *_gameProject;
@@ -124,6 +126,7 @@ public:
 	bool _flgGameIsRunning;
 	bool _inputArFlag;
 	bool _recordEvents;
+	bool _mainMenu_debugEnabled;
 
 	Common::Rect _sceneRect;
 	int _sceneWidth;
@@ -148,17 +151,32 @@ public:
 	int _currSoundListCount;
 	bool _soundEnabled;
 	bool _flgSoundList;
+	char _sceneTracks[10][260];
+	int _numSceneTracks;
+	bool _sceneTrackHasSequence;
+	int _musicMinDelay;
+	int _musicMaxDelay;
+	int _musicLocal;
+	char _trackName[2600];
+	int _trackStartDelay;
+	char _sceneTracksCurrentTrack[260];
+	bool _sceneTrackIsPlaying;
 
 	void stopAllSounds();
 	void toggleMute();
 	void playSound(int id, int flag);
 	void playTrack(GameVar *sceneVar, const char *name, bool delayed);
+	int getSceneTrack();
 	void startSceneTrack();
+	void startSoundStream1(char *trackName);
 	void stopSoundStream2();
 	void stopAllSoundStreams();
 	void stopAllSoundInstances(int id);
+	void updateSoundVolume();
+	void setMusicVolume(int vol);
 
 	int _sfxVolume;
+	int _musicVolume;
 
 	GlobalMessageQueueList *_globalMessageQueueList;
 	MessageHandler *_messageHandlers;
@@ -224,6 +242,9 @@ public:
 	int (*_updateScreenCallback)();
 	int (*_updateCursorCallback)();
 
+	void drawAlphaRectangle(int x1, int y1, int x2, int y2, int alpha);
+	void sceneFade(Scene *sc, bool direction);
+
 	int _cursorId;
 	int _minCursorId;
 	int _maxCursorId;
@@ -266,21 +287,33 @@ public:
 
 	void getAllInventory();
 
+	StaticANIObject *_lastLiftButton;
+	MessageQueue *_liftEnterMQ;
+	MessageQueue *_liftExitMQ;
+	StaticANIObject *_lift;
+	int _liftX;
+	int _liftY;
+
 	int lift_getButtonIdP(int objid);
+	int lift_getButtonIdH(int objid);
+	int lift_getButtonIdN(int objid);
 	void lift_setButton(const char *name, int state);
-	void lift_sub5(Scene *sc, int qu1, int qu2);
-	void lift_sub7(Scene *sc, int buttonId);
+	void lift_init(Scene *sc, int qu1, int qu2);
+	void lift_setButtonStatics(Scene *sc, int buttonId);
 	void lift_exitSeq(ExCommand *ex);
 	void lift_closedoorSeq();
-	void lift_animation3();
+	void lift_clickButton();
+	void lift_walkAndGo();
 	void lift_goAnimation();
-	void lift_sub1(StaticANIObject *ani);
+	void lift_animateButton(StaticANIObject *button);
 	void lift_startExitQueue();
-	void lift_sub05(ExCommand *ex);
+	void lift_hoverButton(ExCommand *ex);
 	bool lift_checkButton(const char *varname);
+	void lift_openLift();
 
 	GameVar *_musicGameVar;
 	Audio::SoundHandle _sceneTrackHandle;
+
 public:
 
 	bool _isSaveAllowed;

@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -435,8 +435,9 @@ void ScummEngine_v6::processKeyboard(Common::KeyState lastKeyHit) {
 			break;
 		}
 
-		if (VAR_VOICE_MODE != 0xFF)
-			VAR(VAR_VOICE_MODE) = _voiceMode;
+		// We need to sync the current sound settings here to make sure that
+		// we actually update the mute state of speech properly.
+		syncSoundSettings();
 
 		return;
 	}
@@ -451,8 +452,16 @@ void ScummEngine_v2::processKeyboard(Common::KeyState lastKeyHit) {
 		lastKeyHit = Common::KeyState(Common::KEYCODE_ESCAPE);
 	// F7 is used to skip cutscenes in the Commodote 64 version of Maniac Mansion
 	} else if (_game.id == GID_MANIAC &&_game.platform == Common::kPlatformC64) {
-		if (lastKeyHit.keycode == Common::KEYCODE_F7 && lastKeyHit.hasFlags(0))
-			lastKeyHit = Common::KeyState(Common::KEYCODE_ESCAPE);
+		// Demo always F7 to be pressed to restart
+		if (_game.features & GF_DEMO) {
+			if (_roomResource != 0x2D && lastKeyHit.keycode == Common::KEYCODE_F7 && lastKeyHit.hasFlags(0)) {
+				restart();
+				return;
+			}
+		} else {
+			if (lastKeyHit.keycode == Common::KEYCODE_F7 && lastKeyHit.hasFlags(0))
+				lastKeyHit = Common::KeyState(Common::KEYCODE_ESCAPE);
+		}
 	// 'B' is used to skip cutscenes in the NES version of Maniac Mansion
 	} else if (_game.id == GID_MANIAC &&_game.platform == Common::kPlatformNES) {
 		if (lastKeyHit.keycode == Common::KEYCODE_b && lastKeyHit.hasFlags(Common::KBD_SHIFT))

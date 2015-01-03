@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -28,22 +28,19 @@
 #include "common/list.h"
 #include "common/rect.h"
 
+namespace Video {
+	class VideoDecoder;
+}
 
 namespace ZVision {
 
-class ZorkAVIDecoder;
-class RlfAnimation;
-
+// Only used in Zork Nemesis, handles draggable levers (te2e, tm7e, tp2e, tt2e, tz2e)
 class LeverControl : public Control {
 public:
 	LeverControl(ZVision *engine, uint32 key, Common::SeekableReadStream &stream);
 	~LeverControl();
 
 private:
-	enum FileType {
-		RLF = 1,
-		AVI = 2
-	};
 
 	struct Direction {
 		Direction(uint a, uint t) : angle(a), toFrame(t) {}
@@ -64,13 +61,9 @@ private:
 	};
 
 private:
-	union {
-		RlfAnimation *rlf;
-		ZorkAVIDecoder *avi;
-	} _animation;
-	FileType _fileType;
+	Video::VideoDecoder *_animation;
 
-	Common::String _cursorName;
+	int _cursor;
 	Common::Rect _animationCoords;
 	bool _mirrored;
 	uint _frameCount;
@@ -88,8 +81,8 @@ private:
 	uint32 _accumulatedTime;
 
 public:
-	void onMouseDown(const Common::Point &screenSpacePos, const Common::Point &backgroundImageSpacePos);
-	void onMouseUp(const Common::Point &screenSpacePos, const Common::Point &backgroundImageSpacePos);
+	bool onMouseDown(const Common::Point &screenSpacePos, const Common::Point &backgroundImageSpacePos);
+	bool onMouseUp(const Common::Point &screenSpacePos, const Common::Point &backgroundImageSpacePos);
 	bool onMouseMove(const Common::Point &screenSpacePos, const Common::Point &backgroundImageSpacePos);
 	bool process(uint32 deltaTimeInMillis);
 
@@ -120,6 +113,7 @@ private:
 	 */
 	static int calculateVectorAngle(const Common::Point &pointOne, const Common::Point &pointTwo);
 	void renderFrame(uint frameNumber);
+	void getLevParams(const Common::String &inputStr, Common::String &parameter, Common::String &values);
 };
 
 } // End of namespace ZVision

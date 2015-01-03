@@ -1,24 +1,24 @@
 /* ScummVM - Graphic Adventure Engine
-*
-* ScummVM is the legal property of its developers, whose names
-* are too numerous to list here. Please refer to the COPYRIGHT
-* file distributed with this source distribution.
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
-* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-*/
+ *
+ * ScummVM is the legal property of its developers, whose names
+ * are too numerous to list here. Please refer to the COPYRIGHT
+ * file distributed with this source distribution.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ */
 
 #include "common/system.h"
 #include "common/events.h"
@@ -184,10 +184,10 @@ void ToonEngine::parseInput() {
 	Common::Event event;
 	while (_event->pollEvent(event)) {
 
-		bool hasModifier = event.kbd.hasFlags(Common::KBD_ALT|Common::KBD_CTRL|Common::KBD_SHIFT);
+		const bool hasModifier = (event.kbd.flags & Common::KBD_NON_STICKY) != 0;
 		switch (event.type) {
 		case Common::EVENT_KEYDOWN:
-			if ((event.kbd.ascii == 27 || event.kbd.ascii == 32) && !hasModifier) {
+			if ((event.kbd.keycode == Common::KEYCODE_ESCAPE || event.kbd.keycode == Common::KEYCODE_SPACE) && !hasModifier) {
 				_audioManager->stopCurrentVoice();
 			}
 			if (event.kbd.keycode == Common::KEYCODE_F5 && !hasModifier) {
@@ -198,21 +198,21 @@ void ToonEngine::parseInput() {
 				if (canLoadGameStateCurrently())
 					loadGame(-1);
 			}
-			if (event.kbd.ascii == 't' && !hasModifier) {
+			if (event.kbd.keycode == Common::KEYCODE_t && !hasModifier) {
 				_showConversationText = !_showConversationText;
 			}
-			if (event.kbd.ascii == 'm' && !hasModifier) {
+			if (event.kbd.keycode == Common::KEYCODE_m && !hasModifier) {
 				_audioManager->muteMusic(!_audioManager->isMusicMuted());
 			}
-			if (event.kbd.ascii == 'd' && !hasModifier) {
+			if (event.kbd.keycode == Common::KEYCODE_d && !hasModifier) {
 				_audioManager->muteVoice(!_audioManager->isVoiceMuted());
 			}
-			if (event.kbd.ascii == 's' && !hasModifier) {
+			if (event.kbd.keycode == Common::KEYCODE_s && !hasModifier) {
 				_audioManager->muteSfx(!_audioManager->isSfxMuted());
 			}
 
 			if (event.kbd.flags & Common::KBD_ALT) {
-				int slotNum = event.kbd.ascii - '0';
+				int slotNum = event.kbd.keycode - (event.kbd.keycode >= Common::KEYCODE_KP0 ? Common::KEYCODE_KP0 : Common::KEYCODE_0);
 				if (slotNum >= 0 && slotNum <= 9 && canSaveGameStateCurrently()) {
 					if (saveGame(slotNum, "")) {
 						// ok
@@ -229,7 +229,7 @@ void ToonEngine::parseInput() {
 			}
 
 			if (event.kbd.flags & Common::KBD_CTRL) {
-				int slotNum = event.kbd.ascii - '0';
+				int slotNum = event.kbd.keycode - (event.kbd.keycode >= Common::KEYCODE_KP0 ? Common::KEYCODE_KP0 : Common::KEYCODE_0);
 				if (slotNum >= 0 && slotNum <= 9 && canLoadGameStateCurrently()) {
 					if (loadGame(slotNum)) {
 						// ok
@@ -634,7 +634,6 @@ bool ToonEngine::showMainmenu(bool &loadedGame) {
 
 	bool doExit = false;
 	bool exitGame = false;
-	int clickingOn, clickRelease;
 	int menuMask = MAINMENUMASK_BASE;
 	Common::SeekableReadStream *mainmenuMusicFile = NULL;
 	AudioStreamInstance *mainmenuMusic = NULL;
@@ -644,8 +643,8 @@ bool ToonEngine::showMainmenu(bool &loadedGame) {
 	dirtyAllScreen();
 
 	while (!doExit) {
-		clickingOn = MAINMENUHOTSPOT_NONE;
-		clickRelease = false;
+		int clickingOn = MAINMENUHOTSPOT_NONE;
+		int clickRelease = false;
 
 		if (!musicPlaying) {
 			mainmenuMusicFile = resources()->openFile("BR091013.MUS");
@@ -2038,23 +2037,19 @@ int32 ToonEngine::characterTalk(int32 dialogid, bool blocking) {
 		}
 	}
 
-	int32 myId = 0;
 	char *myLine;
-	if (dialogid < 1000) {
+	if (dialogid < 1000)
 		myLine = _roomTexts->getText(dialogid);
-		myId = dialogid;
-	} else {
+	else
 		myLine = _genericTexts->getText(dialogid - 1000);
-		myId = dialogid - 1000;
-	}
 
 	if (!myLine)
 		return 0;
 
 	bool oldMouseHidden = _gameState->_mouseHidden;
-	if (blocking) {
+	if (blocking)
 		_gameState->_mouseHidden = true;
-	}
+
 
 	// get what is before the string
 	int a = READ_LE_UINT16(myLine - 2);
@@ -2091,10 +2086,8 @@ int32 ToonEngine::characterTalk(int32 dialogid, bool blocking) {
 			while ((waitChar->getAnimFlag() & 0x10) == 0x10 && !_shouldQuit)
 				doFrame();
 		}
-	} else {
-		if (_audioManager->voiceStillPlaying())
-			_audioManager->stopCurrentVoice();
-	}
+	} else if (_audioManager->voiceStillPlaying())
+		_audioManager->stopCurrentVoice();
 
 	for (int32 i = 0; i < numParticipants - 1; i++) {
 		// listener
@@ -2134,10 +2127,10 @@ int32 ToonEngine::characterTalk(int32 dialogid, bool blocking) {
 	getTextPosition(talkerId, &_currentTextLineX, &_currentTextLineY);
 
 	if (dialogid < 1000) {
-		myId = _roomTexts->getId(dialogid);
+		int myId = _roomTexts->getId(dialogid);
 		_audioManager->playVoice(myId, false);
 	} else {
-		myId = _genericTexts->getId(dialogid - 1000);
+		int myId = _genericTexts->getId(dialogid - 1000);
 		_audioManager->playVoice(myId, true);
 	}
 
@@ -3615,7 +3608,7 @@ int32 ToonEngine::handleInventoryOnInventory(int32 itemDest, int32 itemSrc) {
 			createMouseItem(21);
 			rearrangeInventory();
 			return 1;
-		} else if (itemSrc == 0x6b || itemSrc == 0x6c || itemSrc == 0x6f || itemSrc == 108 || itemSrc == 112) {
+		} else if (itemSrc == 0x6b || itemSrc == 0x6c || itemSrc == 0x6f || itemSrc == 0x70) {
 			sayLines(2, 1292);
 			return 1;
 		}
@@ -4617,15 +4610,13 @@ void ToonEngine::unloadToonDat() {
 }
 
 char **ToonEngine::loadTextsVariants(Common::File &in) {
-	int  numTexts;
-	int  entryLen;
 	int  len;
 	char **res = 0;
 	char *pos = 0;
 
 	for (int varnt = 0; varnt < _numVariant; varnt++) {
-		numTexts = in.readUint16BE();
-		entryLen = in.readUint16BE();
+		int numTexts = in.readUint16BE();
+		int entryLen = in.readUint16BE();
 		pos = (char *)malloc(entryLen);
 		if (varnt == _gameVariant) {
 			res = (char **)malloc(sizeof(char *) * numTexts);

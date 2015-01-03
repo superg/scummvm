@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -34,11 +34,69 @@
 namespace Fullpipe {
 
 void global_messageHandler_KickStucco() {
-	warning("STUB: global_messageHandler_KickStucco()");
+	Movement *mov = g_fp->_aniMan->getMovementById(MV_MAN_HMRKICK);
+	int end = mov->_currMovement ? mov->_currMovement->_dynamicPhases.size() : mov->_dynamicPhases.size();
+	bool flip = false;
+
+	for (int i = 0; i < end; i++) {
+		ExCommand *ex = mov->getDynamicPhaseByIndex(i)->_exCommand;
+
+		if (ex)
+			if (ex->_messageKind == 35)
+				if (ex->_messageNum == SND_CMN_015) {
+					if (flip) {
+						ex->_messageNum = SND_CMN_055;
+					} else {
+						ex->_messageNum = SND_CMN_054;
+						flip = true;
+					}
+				}
+	}
+
+	mov = g_fp->_aniMan->getMovementById(MV_MAN_HMRKICK_COINLESS);
+	end = mov->_currMovement ? mov->_currMovement->_dynamicPhases.size() : mov->_dynamicPhases.size();
+	flip = false;
+
+	for (int i = 0; i < end; i++) {
+		ExCommand *ex = mov->getDynamicPhaseByIndex(i)->_exCommand;
+
+		if (ex)
+			if (ex->_messageKind == 35)
+				if (ex->_messageNum == SND_CMN_015) {
+					if (flip) {
+						ex->_messageNum = SND_CMN_055;
+					} else {
+						ex->_messageNum = SND_CMN_054;
+						flip = true;
+					}
+				}
+	}
 }
 
 void global_messageHandler_KickMetal() {
-	warning("STUB: global_messageHandler_KickMetal()");
+	Movement *mov = g_fp->_aniMan->getMovementById(MV_MAN_HMRKICK);
+	int end = mov->_currMovement ? mov->_currMovement->_dynamicPhases.size() : mov->_dynamicPhases.size();
+
+	for (int i = 0; i < end; i++) {
+		ExCommand *ex = mov->getDynamicPhaseByIndex(i)->_exCommand;
+
+		if (ex)
+			if (ex->_messageKind == 35)
+				if (ex->_messageNum == SND_CMN_054 || ex->_messageNum == SND_CMN_055)
+					ex->_messageNum = SND_CMN_015;
+	}
+
+	mov = g_fp->_aniMan->getMovementById(MV_MAN_HMRKICK_COINLESS);
+	end = mov->_currMovement ? mov->_currMovement->_dynamicPhases.size() : mov->_dynamicPhases.size();
+
+	for (int i = 0; i < end; i++) {
+		ExCommand *ex = mov->getDynamicPhaseByIndex(i)->_exCommand;
+
+		if (ex)
+			if (ex->_messageKind == 35)
+				if (ex->_messageNum == SND_CMN_054 || ex->_messageNum == SND_CMN_055)
+					ex->_messageNum = SND_CMN_015;
+	}
 }
 
 int global_messageHandler1(ExCommand *cmd) {
@@ -151,7 +209,7 @@ int global_messageHandler1(ExCommand *cmd) {
 
 			if (g_fp->_updateFlag && (invItem = g_fp->_inventory->getHoveredItem(&g_fp->_mouseScreenPos))) {
 				g_fp->_cursorId = PIC_CSR_ITN;
-				if (!g_fp->_currSelectedInventoryItemId && !g_fp->_aniMan->_movement && 
+				if (!g_fp->_currSelectedInventoryItemId && !g_fp->_aniMan->_movement &&
 					!(g_fp->_aniMan->_flags & 0x100) && g_fp->_aniMan->isIdle()) {
 					int st = g_fp->_aniMan->_statics->_staticsId;
 					ExCommand *newex = 0;
@@ -334,12 +392,10 @@ int global_messageHandler3(ExCommand *cmd) {
 			}
 			return result;
 		case 29:
-			if (!g_fp->_currentScene)
-				return result;
-
-			if (g_fp->_gameLoader->_interactionController->_flag24) {
+			if (g_fp->_gameLoader->_interactionController->_flag24 && g_fp->_currentScene) {
 				ani = g_fp->_currentScene->getStaticANIObjectAtPos(cmd->_sceneClickX, cmd->_sceneClickY);
 				ani2 = g_fp->_currentScene->getStaticANIObject1ById(g_fp->_gameLoader->_field_FA, -1);
+
 				if (ani) {
 					if (g_fp->_msgObjectId2 == ani->_id && g_fp->_msgId == ani->_okeyCode) {
 						cmd->_messageKind = 0;
@@ -528,9 +584,9 @@ int global_messageHandler4(ExCommand *cmd) {
 		ExCommand2 *cmd2 = (ExCommand2 *)cmd;
 
 		if (cmd->_excFlags & 1) {
-			ani->startAnimSteps(cmd->_messageNum, 0, cmd->_x, cmd->_y, cmd2->_points, cmd2->_pointsSize >> 3, flags);
+			ani->startAnimSteps(cmd->_messageNum, 0, cmd->_x, cmd->_y, cmd2->_points, cmd2->_pointsSize, flags);
 		} else {
-			ani->startAnimSteps(cmd->_messageNum, cmd->_parId, cmd->_x, cmd->_y, cmd2->_points, cmd2->_pointsSize >> 3, flags);
+			ani->startAnimSteps(cmd->_messageNum, cmd->_parId, cmd->_x, cmd->_y, cmd2->_points, cmd2->_pointsSize, flags);
 		}
 		break;
 	}

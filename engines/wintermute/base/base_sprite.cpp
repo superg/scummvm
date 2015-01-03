@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -41,6 +41,7 @@
 #include "engines/wintermute/base/scriptables/script_value.h"
 #include "engines/wintermute/base/scriptables/script.h"
 #include "engines/wintermute/base/scriptables/script_stack.h"
+#include "engines/wintermute/game_description.h"
 
 namespace Wintermute {
 
@@ -347,9 +348,17 @@ void BaseSprite::reset() {
 	} else {
 		_currentFrame = -1;
 	}
-
-	killAllSounds();
-
+	if (BaseEngine::instance().getTargetExecutable() >= WME_1_8_6) {
+		/*
+		* This was added in WME 1.8.6
+		*
+		* 5MA and possibly other games ship with pre-1.8.6 WME, and
+		* depends (e.g.: menu sounds, etc) on this not being triggered.
+		*
+		* See bug #6647
+		*/
+		killAllSounds();
+	}
 	_lastFrameTime = 0;
 	_finished = false;
 	_moveX = _moveY = 0;
@@ -418,7 +427,7 @@ bool BaseSprite::getCurrentFrame(float zoomX, float zoomY) {
 
 
 //////////////////////////////////////////////////////////////////////
-bool BaseSprite::display(int x, int y, BaseObject *registerVal, float zoomX, float zoomY, uint32 alpha, float rotate, TSpriteBlendMode blendMode) {
+bool BaseSprite::display(int x, int y, BaseObject *registerVal, float zoomX, float zoomY, uint32 alpha, float rotate, Graphics::TSpriteBlendMode blendMode) {
 	if (_currentFrame < 0 || _currentFrame >= (int32)_frames.size()) {
 		return STATUS_OK;
 	}

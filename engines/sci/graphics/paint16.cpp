@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -476,7 +476,7 @@ void GfxPaint16::kernelGraphRedrawBox(Common::Rect rect) {
 #define SCI_DISPLAY_DUMMY3				117
 #define SCI_DISPLAY_DONTSHOWBITS		121
 
-reg_t GfxPaint16::kernelDisplay(const char *text, int argc, reg_t *argv) {
+reg_t GfxPaint16::kernelDisplay(const char *text, uint16 languageSplitter, int argc, reg_t *argv) {
 	reg_t displayArg;
 	TextAlignment alignment = SCI_TEXT16_ALIGNMENT_LEFT;
 	int16 colorPen = -1, colorBack = -1, width = -1, bRedraw = 1;
@@ -572,7 +572,7 @@ reg_t GfxPaint16::kernelDisplay(const char *text, int argc, reg_t *argv) {
 	}
 
 	// now drawing the text
-	_text16->Size(rect, text, -1, width);
+	_text16->Size(rect, text, languageSplitter, -1, width);
 	rect.moveTo(_ports->getPort()->curLeft, _ports->getPort()->curTop);
 	// Note: This code has been found in SCI1 middle and newer games. It was
 	// previously only for SCI1 late and newer, but the LSL1 interpreter contains
@@ -588,7 +588,7 @@ reg_t GfxPaint16::kernelDisplay(const char *text, int argc, reg_t *argv) {
 		result = bitsSave(rect, GFX_SCREEN_MASK_VISUAL);
 	if (colorBack != -1)
 		fillRect(rect, GFX_SCREEN_MASK_VISUAL, colorBack, 0, 0);
-	_text16->Box(text, false, rect, alignment, -1);
+	_text16->Box(text, languageSplitter, false, rect, alignment, -1);
 	if (_screen->_picNotValid == 0 && bRedraw)
 		bitsShow(rect);
 	// restoring port and cursor pos

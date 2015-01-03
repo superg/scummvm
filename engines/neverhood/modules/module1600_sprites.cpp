@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -30,6 +30,8 @@ AsCommonCar::AsCommonCar(NeverhoodEngine *vm, Scene *parentScene, int16 x, int16
 	createSurface(200, 556, 328);
 	_x = x;
 	_y = y;
+	_destX = x;
+	_destY = y;
 
 	_inMainArea = false;
 	_exitDirection = 0;
@@ -48,6 +50,7 @@ AsCommonCar::AsCommonCar(NeverhoodEngine *vm, Scene *parentScene, int16 x, int16
 	_soundCounter = 0;
 	_pathPoints = NULL;
 	_currMoveDirection = 0;
+	_newMoveDirection = 0;
 
 	startAnimation(0xD4220027, 0, -1);
 	setDoDeltaX(getGlobalVar(V_CAR_DELTA_X));

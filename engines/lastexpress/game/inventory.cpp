@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -39,7 +39,6 @@
 #include "lastexpress/graphics.h"
 #include "lastexpress/lastexpress.h"
 #include "lastexpress/resource.h"
-
 
 namespace LastExpress {
 
@@ -534,18 +533,18 @@ Common::String Inventory::toString() {
 // Private methods
 //////////////////////////////////////////////////////////////////////////
 InventoryItem Inventory::getFirstExaminableItem() const {
-
 	int index = 0;
-	InventoryEntry entry = _entries[index];
-	while (!entry.inPocket || !entry.cursor || entry.floating) {
+	do {
+		InventoryEntry entry = _entries[index];
+
+		// Check if it is an examinable item
+		if (entry.inPocket && entry.cursor && !entry.floating)
+			return (InventoryItem)index;
+
 		index++;
-		entry = _entries[index];
+	} while (index < kPortraitOriginal);
 
-		if (index >= kPortraitOriginal)
-			return kItemNone;
-	}
-
-	return (InventoryItem)index;
+	return kItemNone;
 }
 
 bool Inventory::isItemSceneParameter(InventoryItem item) const {

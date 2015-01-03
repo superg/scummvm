@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -36,10 +36,10 @@
 #include "engines/wintermute/base/gfx/base_image.h"
 #include "engines/wintermute/base/save_thumb_helper.h"
 #include "engines/wintermute/base/sound/base_sound.h"
-#include "engines/wintermute/graphics/transparent_surface.h"
+#include "graphics/transparent_surface.h"
 #include "engines/wintermute/wintermute.h"
-#include "graphics/decoders/bmp.h"
 #include "graphics/scaler.h"
+#include "image/bmp.h"
 #include "common/memstream.h"
 #include "common/str.h"
 #include "common/system.h"
@@ -170,10 +170,10 @@ void BasePersistenceManager::getSaveStateDesc(int slot, SaveStateDescriptor &des
 
 	if (thumbSize > 0) {
 		Common::MemoryReadStream thumbStream(thumbData, thumbSize, DisposeAfterUse::NO);
-		Graphics::BitmapDecoder bmpDecoder;
+		Image::BitmapDecoder bmpDecoder;
 		if (bmpDecoder.loadStream(thumbStream)) {
 			const Graphics::Surface *bmpSurface = bmpDecoder.getSurface();
-			TransparentSurface *scaleableSurface = new TransparentSurface(*bmpSurface, false);
+			Graphics::TransparentSurface *scaleableSurface = new Graphics::TransparentSurface(*bmpSurface, false);
 			Graphics::Surface *scaled = scaleableSurface->scale(kThumbnailWidth, kThumbnailHeight2);
 			Graphics::Surface *thumb = scaled->convertTo(g_system->getOverlayFormat());
 			desc.setThumbnail(thumb);

@@ -8,16 +8,15 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
- *
  *
  */
 
@@ -30,7 +29,7 @@
 #include "common/stream.h"
 
 #include "audio/audiostream.h"
-
+#include "audio/decoders/raw.h"
 
 namespace ZVision {
 
@@ -43,11 +42,25 @@ void ZorkAVIDecoder::ZorkAVIAudioTrack::queueSound(Common::SeekableReadStream *s
 	if (_audStream) {
 		if (_wvInfo.tag == kWaveFormatZorkPCM) {
 			assert(_wvInfo.size == 8);
-			_audStream->queueAudioStream(makeRawZorkStream(stream, _wvInfo.samplesPerSec, _audStream->isStereo(), DisposeAfterUse::YES), DisposeAfterUse::YES);
+			RawChunkStream::RawChunk chunk = decoder->readNextChunk(stream);
+			delete stream;
+
+			if (chunk.data) {
+				byte flags = Audio::FLAG_16BITS | Audio::FLAG_STEREO;
+#ifdef SCUMM_LITTLE_ENDIAN
+				// RawChunkStream produces native endianness int16
+				flags |= Audio::FLAG_LITTLE_ENDIAN;
+#endif
+				_audStream->queueBuffer((byte *)chunk.data, chunk.size, DisposeAfterUse::YES, flags);
+			}
+		} else {
+			AVIAudioTrack::queueSound(stream);
 		}
-	} else {
-		delete stream;
 	}
+}
+
+void ZorkAVIDecoder::ZorkAVIAudioTrack::resetStream() {
+	decoder->init();
 }
 
 } // End of namespace ZVision

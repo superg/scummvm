@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -764,7 +764,7 @@ void Animation::catacombMove(byte ped) {
 			spr1->init(5, true); // ...Load Geida.
 		appearPed(1, geidaPed(ped));
 		spr1->_callEachStepFl = true;
-		spr1->_eachStepProc = kProcGeida;
+		spr1->_eachStepProc = kProcFollowAvvy;
 	}
 }
 
@@ -815,10 +815,9 @@ void Animation::callSpecial(uint16 which) {
 		}
 		break;
 	case 4: // This is the ghost room link.
-		_vm->fadeOut();
-		_sprites[0]->turn(kDirRight); // you'll see this after we get back from bootstrap
+		_sprites[0]->turn(kDirRight); // You'll see this after we get back.
 		_vm->_timer->addTimer(1, Timer::kProcGhostRoomPhew, Timer::kReasonGhostRoomPhew);
-		//_vm->_enid->backToBootstrap(3); TODO: Replace it with proper ScummVM-friendly function(s)!  Do not remove until then!
+		_vm->_ghostroom->run();
 		break;
 	case 5:
 		if (_vm->_friarWillTieYouUp) {
@@ -1122,7 +1121,7 @@ void Animation::spin(Direction dir, byte &tripnum) {
 	}
 }
 
-void Animation::geidaProcs(byte tripnum) {
+void Animation::follow(byte tripnum) {
 	AnimationType *tripSpr = _sprites[tripnum];
 	AnimationType *avvy = _sprites[0];
 
@@ -1133,14 +1132,14 @@ void Animation::geidaProcs(byte tripnum) {
 	}
 
 	if (tripSpr->_y < (avvy->_y - 2)) {
-		// Geida is further from the screen than Avvy.
+		// The following NPC is further from the screen than Avvy.
 		spin(kDirDown, tripnum);
 		tripSpr->_moveY = 1;
 		tripSpr->_moveX = 0;
 		takeAStep(tripnum);
 		return;
 	} else if (tripSpr->_y > (avvy->_y + 2)) {
-		// Avvy is further from the screen than Geida.
+		// Avvy is further from the screen than the following NPC.
 		spin(kDirUp, tripnum);
 		tripSpr->_moveY = -1;
 		tripSpr->_moveX = 0;
@@ -1206,8 +1205,9 @@ void Animation::drawSprites() {
  * @remarks	Originally called 'trippancy_link'
  */
 void Animation::animLink() {
-	if (_vm->_menu->isActive() || _vm->_seeScroll)
+	if (_vm->_dropdown->isActive() || !_vm->_animationsEnabled)
 		return;
+
 	for (int16 i = 0; i < kSpriteNumbMax; i++) {
 		AnimationType *curSpr = _sprites[i];
 		if (curSpr->_quick && curSpr->_visible)
@@ -1236,8 +1236,8 @@ void Animation::animLink() {
 			case kProcGrabAvvy :
 				grabAvvy(i);
 				break;
-			case kProcGeida :
-				geidaProcs(i);
+			case kProcFollowAvvy :
+				follow(i);
 				break;
 			default:
 				break;
@@ -1330,7 +1330,7 @@ void Animation::handleMoveKey(const Common::Event &event) {
 	if (!_vm->_userMovesAvvy)
 		return;
 
-	if (_vm->_menu->_activeMenuItem._activeNow)
+	if (_vm->_dropdown->_activeMenuItem._activeNow)
 		_vm->_parser->tryDropdown();
 	else {
 		switch (event.kbd.keycode) {

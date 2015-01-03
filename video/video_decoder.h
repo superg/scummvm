@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -212,6 +212,17 @@ public:
 	 * endOfVideo() is only affected when the video is playing.
 	 */
 	void setEndTime(const Audio::Timestamp &endTime);
+
+	/**
+	 * Set the end frame.
+	 *
+	 * The passed frame will be the last frame to show.
+	 *
+	 * Like seekToFrame(), this only works when one video track is present,
+	 * and that track supports getFrameTime(). This calls setEndTime()
+	 * internally.
+	 */
+	void setEndFrame(uint frame);
 
 	/**
 	 * Get the stop time of the video (if not set, zero)

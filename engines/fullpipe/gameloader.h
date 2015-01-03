@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -28,6 +28,8 @@
 #include "fullpipe/messages.h"
 
 namespace Fullpipe {
+
+#define FULLPIPE_SAVEGAME_VERSION 1
 
 class SceneTag;
 class MctlCompound;
@@ -72,6 +74,12 @@ class PreloadItems : public Common::Array<PreloadItem *>, public CObject {
 	virtual bool load(MfcArchive &file);
 };
 
+struct FullpipeSavegameHeader {
+	uint8 version;
+	Common::String saveName;
+	Graphics::Surface *thumbnail;
+};
+
 class GameLoader : public CObject {
  public:
 	GameLoader();
@@ -88,6 +96,11 @@ class GameLoader : public CObject {
 	int getSceneTagBySceneId(int sceneId, SceneTag **st);
 	void applyPicAniInfos(Scene *sc, PicAniInfo **picAniInfo, int picAniInfoCount);
 	void saveScenePicAniInfos(int sceneId);
+
+	void readSavegame(const char *fname);
+	void writeSavegame(Scene *sc, const char *fname);
+
+	void restoreDefPicAniInfos();
 
 	GameProject *_gameProject;
 	InteractionController *_interactionController;
@@ -107,6 +120,9 @@ class GameLoader : public CObject {
 	int _preloadSceneId;
 	int _preloadEntranceId;
 };
+
+const char *getSavegameFile(int saveGameIdx);
+bool readSavegameHeader(Common::InSaveFile *in, FullpipeSavegameHeader &header);
 
 Inventory2 *getGameLoaderInventory();
 InteractionController *getGameLoaderInteractionController();

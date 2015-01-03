@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -563,31 +563,28 @@ const ADGameDescription *SciMetaEngine::fallbackDetect(const FileMap &allFiles, 
 
 
 	// If these files aren't found, it can't be SCI
-	if (!foundResMap && !foundRes000) {
+	if (!foundResMap && !foundRes000)
 		return 0;
-	}
 
 	ResourceManager resMan;
-	resMan.addAppropriateSources(fslist);
-	resMan.init(true);
+	resMan.addAppropriateSourcesForDetection(fslist);
+	resMan.initForDetection();
 	// TODO: Add error handling.
 
 #ifndef ENABLE_SCI32
 	// Is SCI32 compiled in? If not, and this is a SCI32 game,
 	// stop here
-	if (getSciVersion() >= SCI_VERSION_2) {
-		return (const ADGameDescription *)&s_fallbackDesc;
-	}
+	if (getSciVersionForDetection() >= SCI_VERSION_2)
+		return 0;
 #endif
 
 	ViewType gameViews = resMan.getViewType();
 
 	// Have we identified the game views? If not, stop here
-	// Can't be SCI (or unsupported SCI views). Pinball Creep by sierra also uses resource.map/resource.000 files
-	//  but doesnt share sci format at all, if we dont return 0 here we will detect this game as SCI
-	if (gameViews == kViewUnknown) {
+	// Can't be SCI (or unsupported SCI views). Pinball Creep by Sierra also uses resource.map/resource.000 files
+	// but doesn't share SCI format at all
+	if (gameViews == kViewUnknown)
 		return 0;
-	}
 
 	// Set the platform to Amiga if the game is using Amiga views
 	if (gameViews == kViewAmiga)
@@ -597,9 +594,8 @@ const ADGameDescription *SciMetaEngine::fallbackDetect(const FileMap &allFiles, 
 	Common::String sierraGameId = resMan.findSierraGameId();
 
 	// If we don't have a game id, the game is not SCI
-	if (sierraGameId.empty()) {
+	if (sierraGameId.empty())
 		return 0;
-	}
 
 	Common::String gameId = convertSierraGameId(sierraGameId, &s_fallbackDesc.flags, resMan);
 	strncpy(s_fallbackGameIdBuf, gameId.c_str(), sizeof(s_fallbackGameIdBuf) - 1);

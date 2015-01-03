@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -135,13 +135,13 @@ int AgiLoader_v2::unloadResource(int t, int n) {
  */
 uint8 *AgiLoader_v2::loadVolRes(struct AgiDir *agid) {
 	uint8 *data = NULL;
-	char x[MAXPATHLEN], *path;
+	char x[6];
 	Common::File fp;
 	unsigned int sig;
+	Common::String path;
 
-	sprintf(x, "vol.%i", agid->volume);
-	path = x;
-	debugC(3, kDebugLevelResources, "Vol res: path = %s", path);
+	path = Common::String::format("vol.%i", agid->volume);
+	debugC(3, kDebugLevelResources, "Vol res: path = %s", path.c_str());
 
 	if (agid->offset != _EMPTY && fp.open(path)) {
 		debugC(3, kDebugLevelResources, "loading resource at offset %d", agid->offset);

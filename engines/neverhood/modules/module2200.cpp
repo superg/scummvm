@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -885,7 +885,7 @@ void Scene2205::update() {
 	} else if (_isLightOn && !getGlobalVar(V_LIGHTS_ON)) {
 		_palette->addPalette(0xD00A028D, 0, 256, 0);
 		changeBackground(0xD00A028D);
-		_ssLightSwitch->setFileHashes(0x2D339030, 0xDAC86E84);
+		_ssLightSwitch->setFileHashes(0xD6C86E84, 0xDAC86E84);
 		sendMessage(_ssDoorFrame, 0x2000, 0);
 		changeMouseCursor(0xA0289D08);
 		_isKlaymenInLight = true;

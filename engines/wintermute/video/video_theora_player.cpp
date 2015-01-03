@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -85,14 +85,14 @@ void VideoTheoraPlayer::SetDefaults() {
 	_volume = 100;
 	_theoraDecoder = nullptr;
 
-	// TODO: Add subtitles-support
-	//_subtitler = nullptr;
+	_subtitler = new VideoSubtitler(_gameRef);
+	_foundSubtitles = false;
 }
 
 //////////////////////////////////////////////////////////////////////////
 VideoTheoraPlayer::~VideoTheoraPlayer(void) {
 	cleanup();
-//	SAFE_DELETE(_subtitler);
+	delete _subtitler;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -127,8 +127,12 @@ bool VideoTheoraPlayer::initialize(const Common::String &filename, const Common:
 #if defined (USE_THEORADEC)
 	_theoraDecoder = new Video::TheoraDecoder();
 #else
+	warning("VideoTheoraPlayer::initialize - Theora support not compiled in, video will be skipped: %s", filename.c_str());
 	return STATUS_FAILED;
 #endif
+
+	_foundSubtitles = _subtitler->loadSubtitles(_filename, subtitleFile);
+
 	_theoraDecoder->loadStream(_file);
 
 	if (!_theoraDecoder->isVideoLoaded()) {
@@ -213,7 +217,10 @@ bool VideoTheoraPlayer::play(TVideoPlayback type, int x, int y, bool freezeGame,
 		_state = THEORA_STATE_PLAYING;
 		_looping = looping;
 		_playbackType = type;
-
+		if (_subtitler && _foundSubtitles && _gameRef->_subtitles) {
+			_subtitler->update(_theoraDecoder->getFrameCount());
+			_subtitler->display();
+		}
 		_startTime = startTime;
 		_volume = volume;
 		_posX = x;
@@ -255,7 +262,7 @@ bool VideoTheoraPlayer::play(TVideoPlayback type, int x, int y, bool freezeGame,
 #if 0 // Stubbed for now as theora isn't seekable
 	if (StartTime) SeekToTime(StartTime);
 
-	Update();
+	update();
 #endif
 	return STATUS_FAILED;
 }
@@ -288,6 +295,10 @@ bool VideoTheoraPlayer::update() {
 	}
 
 	if (_theoraDecoder) {
+		if (_subtitler && _foundSubtitles && _gameRef->_subtitles) {
+			_subtitler->update(_theoraDecoder->getCurFrame());
+		}
+
 		if (_theoraDecoder->endOfVideo() && _looping) {
 			warning("Should loop movie %s, hacked for now", _filename.c_str());
 			_theoraDecoder->rewind();
@@ -305,9 +316,9 @@ bool VideoTheoraPlayer::update() {
 			if (!_theoraDecoder->endOfVideo() && _theoraDecoder->getTimeToNextFrame() == 0) {
 				const Graphics::Surface *decodedFrame = _theoraDecoder->decodeNextFrame();
 				if (decodedFrame) {
-					if (decodedFrame->format == _surface.format && decodedFrame->w == _surface.w && decodedFrame->h == _surface.h) {
-						const byte *src = (const byte*) decodedFrame->getBasePtr(0, 0);
-						byte *dst = (byte*) _surface.getBasePtr(0, 0);
+					if (decodedFrame->format == _surface.format && decodedFrame->pitch == _surface.pitch && decodedFrame->h == _surface.h) {
+						const byte *src = (const byte *)decodedFrame->getBasePtr(0, 0);
+						byte *dst = (byte *)_surface.getBasePtr(0, 0);
 						memcpy(dst, src, _surface.pitch * _surface.h);
 					} else {
 						_surface.free();
@@ -411,11 +422,10 @@ bool VideoTheoraPlayer::display(uint32 alpha) {
 	} else {
 		res = STATUS_FAILED;
 	}
-	// TODO: Add subtitles-support
-/*	if (m_Subtitler && _gameRef->m_VideoSubtitles) {
-		m_Subtitler->display();
-	}*/
 
+	if (_subtitler && _foundSubtitles && _gameRef->_subtitles) {
+		_subtitler->display();
+	}
 	return res;
 }
 

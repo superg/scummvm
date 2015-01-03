@@ -1,5 +1,5 @@
 MODULE := engines/wintermute
- 
+
 MODULE_OBJS := \
 	ad/ad_actor.o \
 	ad/ad_entity.o \
@@ -89,9 +89,6 @@ MODULE_OBJS := \
 	base/save_thumb_helper.o \
 	base/timer.o \
 	detection.o \
-	graphics/transform_struct.o \
-	graphics/transform_tools.o \
-	graphics/transparent_surface.o \
 	math/math_util.o \
 	math/matrix4.o \
 	math/vector2.o \
@@ -111,19 +108,21 @@ MODULE_OBJS := \
 	utils/path_util.o \
 	utils/string_util.o \
 	utils/utils.o \
+	video/subtitle_card.o \
 	video/video_player.o \
+	video/video_subtitler.o \
 	video/video_theora_player.o \
 	debugger.o \
 	wintermute.o \
 	persistent.o
- 
+
 MODULE_DIRS += \
 	engines/wintermute
- 
+
 # This module can be built as a plugin
 ifeq ($(ENABLE_WINTERMUTE), DYNAMIC_PLUGIN)
 PLUGIN := 1
 endif
- 
-# Include common rules 
+
+# Include common rules
 include $(srcdir)/rules.mk

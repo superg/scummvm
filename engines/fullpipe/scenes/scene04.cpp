@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -263,8 +263,8 @@ void sceneHandler04_clickButton() {
 	StaticANIObject *but = g_fp->_currentScene->getStaticANIObject1ById(ANI_BUTTON, -1);
 
 	if (but) {
-		if (!g_vars->scene04_clock->_movement || 
-			(g_vars->scene04_clock->_movement->_id == MV_CLK_GO && g_vars->scene04_clock->_movement->_currDynamicPhaseIndex > 3 && 
+		if (!g_vars->scene04_clock->_movement ||
+			(g_vars->scene04_clock->_movement->_id == MV_CLK_GO && g_vars->scene04_clock->_movement->_currDynamicPhaseIndex > 3 &&
 			 g_vars->scene04_clock->_movement->_currDynamicPhaseIndex < 105)) {
 			if (!g_vars->scene04_hand->_movement && !g_vars->scene04_bottleIsTaken) {
 				but->startAnim(MV_BTN_CLICK, 0, -1);
@@ -324,15 +324,15 @@ void sceneHandler04_walkClimbLadder(ExCommand *ex) {
 	g_vars->scene04_ladder->addObject(g_fp->_aniMan);
 
 	if (g_vars->scene04_soundPlaying) {
-		g_vars->scene04_ladder->_movements.front()->movVars->varUpStart = MV_MAN_STARTLADDER2;
-		g_vars->scene04_ladder->_movements.front()->movVars->varUpGo = MV_MAN_GOLADDER2;
-		g_vars->scene04_ladder->_movements.front()->movVars->varUpStop = MV_MAN_STOPLADDER2;
-		g_vars->scene04_ladder->_movements.front()->staticIds[2] = ST_MAN_GOLADDER2;
+		g_vars->scene04_ladder->_ladmovements.front()->movVars->varUpStart = MV_MAN_STARTLADDER2;
+		g_vars->scene04_ladder->_ladmovements.front()->movVars->varUpGo = MV_MAN_GOLADDER2;
+		g_vars->scene04_ladder->_ladmovements.front()->movVars->varUpStop = MV_MAN_STOPLADDER2;
+		g_vars->scene04_ladder->_ladmovements.front()->staticIds[2] = ST_MAN_GOLADDER2;
 	} else {
-		g_vars->scene04_ladder->_movements.front()->movVars->varUpStart = MV_MAN_STARTLADDER;
-		g_vars->scene04_ladder->_movements.front()->movVars->varUpGo = MV_MAN_GOLADDER;
-		g_vars->scene04_ladder->_movements.front()->movVars->varUpStop = MV_MAN_STOPLADDER;
-		g_vars->scene04_ladder->_movements.front()->staticIds[2] = ST_MAN_GOLADDER;
+		g_vars->scene04_ladder->_ladmovements.front()->movVars->varUpStart = MV_MAN_STARTLADDER;
+		g_vars->scene04_ladder->_ladmovements.front()->movVars->varUpGo = MV_MAN_GOLADDER;
+		g_vars->scene04_ladder->_ladmovements.front()->movVars->varUpStop = MV_MAN_STOPLADDER;
+		g_vars->scene04_ladder->_ladmovements.front()->staticIds[2] = ST_MAN_GOLADDER;
 	}
 
 	g_fp->_aniMan->_priority = 12;
@@ -633,6 +633,7 @@ MessageQueue *sceneHandler04_kozFly5(StaticANIObject *ani, double phase) {
 		mq1->addExCommandToEnd(mq2->getExCommandByIndex(0)->createClone());
 
 		delete mq2;
+		mq2 = 0;
 
 		ExCommand *ex = new ExCommand(ANI_KOZAWKA, 1, MV_KZW_STANDUP, 0, 0, 0, 1, 0, 0, 0);
 		ex->_excFlags |= 2;
@@ -661,6 +662,9 @@ MessageQueue *sceneHandler04_kozFly5(StaticANIObject *ani, double phase) {
 		ex->_keyCode = ani->_okeyCode;
 		mq1->addExCommandToEnd(ex);
 	}
+
+	if (mq2)
+		delete mq2;
 
 	return mq1;
 }
@@ -945,7 +949,7 @@ void sceneHandler04_springWobble() {
 	if (g_vars->scene04_bottleWeight < newdelta)
 		g_vars->scene04_springOffset--;
 
-	if ((oldDynIndex > g_vars->scene04_bottleWeight && newdelta > g_vars->scene04_bottleWeight) || newdelta <= g_vars->scene04_bottleWeight) {
+	if ((oldDynIndex <= g_vars->scene04_bottleWeight && newdelta > g_vars->scene04_bottleWeight) || newdelta <= g_vars->scene04_bottleWeight) {
 		g_vars->scene04_springDelay++;
 
 		if (g_vars->scene04_springOffset && g_vars->scene04_springDelay > 1) {
@@ -956,6 +960,8 @@ void sceneHandler04_springWobble() {
 
 	Common::Point point;
 
+	int oldpos = g_vars->scene04_spring->getCurrDimensions(point)->y - oldDynIndex;
+
 	if (g_vars->scene04_dynamicPhaseIndex) {
 		if (!g_vars->scene04_spring->_movement)
 			g_vars->scene04_spring->startAnim(MV_SPR_LOWER, 0, -1);
@@ -965,8 +971,9 @@ void sceneHandler04_springWobble() {
 		g_vars->scene04_spring->changeStatics2(ST_SPR_UP);
 	}
 
-	if (g_vars->scene04_dynamicPhaseIndex != oldDynIndex)
-		sceneHandler04_bottleUpdateObjects(oldDynIndex - g_vars->scene04_dynamicPhaseIndex);
+	if (g_vars->scene04_dynamicPhaseIndex != oldDynIndex) {
+		sceneHandler04_bottleUpdateObjects(oldpos - (g_vars->scene04_spring->getCurrDimensions(point)->y - g_vars->scene04_dynamicPhaseIndex));
+	}
 }
 
 void sceneHandler04_leaveScene() {
@@ -1196,7 +1203,7 @@ void sceneHandler04_takeBottle() {
 
 void sceneHandler04_takeKozyawka() {
 	if (g_vars->scene04_kozyawkiAni.size() > 0) {
-		if (g_vars->scene04_kozyawkiAni.size() == 1) 
+		if (g_vars->scene04_kozyawkiAni.size() == 1)
 			g_vars->scene04_objectIsTaken = true;
 
 		StaticANIObject *koz = g_vars->scene04_kozyawkiAni.front();
@@ -1284,7 +1291,7 @@ int sceneHandler04(ExCommand *ex) {
 	case MSG_UPDATEBOTTLE:
 		sceneHandler04_updateBottle();
 		break;
-		
+
 	case MSG_CLICKBOTTLE:
 		sceneHandler04_clickBottle();
 		break;
@@ -1486,7 +1493,7 @@ int sceneHandler04(ExCommand *ex) {
 	case MSG_SC4_DROPBOTTLE:
 		sceneHandler04_dropBottle();
 		break;
-		
+
 	case MSG_SC4_COINOUT:
 		g_vars->scene04_clock->changeStatics2(ST_CLK_CLOSED);
 		g_vars->scene04_coinPut = false;

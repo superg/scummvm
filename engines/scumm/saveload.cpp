@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -109,7 +109,12 @@ Common::Error ScummEngine::saveGameState(int slot, const Common::String &desc) {
 }
 
 bool ScummEngine::canSaveGameStateCurrently() {
-	// FIXME: For now always allow loading in V0-V3 games
+	// Disallow saving in v0-v3 games when a 'prequel' to a cutscene is shown.
+	// This is a blank screen with text, and while this is shown, saving should
+	// be disabled, as no room is set.
+	if (_game.version <= 3 && _currentScript == 0xFF && _roomResource == 0 && _currentRoom == 0)
+		return false;
+
 	// TODO: Should we disallow saving in some more places,
 	// e.g. when a SAN movie is playing? Not sure whether the
 	// original EXE allowed this.
@@ -188,32 +193,31 @@ bool ScummEngine::saveState(Common::WriteStream *out, bool writeHeader) {
 }
 
 bool ScummEngine::saveState(int slot, bool compat, Common::String &filename) {
-	bool saveFailed;
+	bool saveFailed = false;
 
 	pauseEngine(true);
 
 	Common::WriteStream *out = openSaveFileForWriting(slot, compat, filename);
-	if (!out)
-		return false;
-
-	saveFailed = false;
-	if (!saveState(out))
+	if (!out) {
 		saveFailed = true;
+	} else {
+		if (!saveState(out))
+			saveFailed = true;
 
-	out->finalize();
-	if (out->err())
-		saveFailed = true;
-	delete out;
-
-	if (saveFailed) {
-		debug(1, "State save as '%s' FAILED", filename.c_str());
-		return false;
+		out->finalize();
+		if (out->err())
+			saveFailed = true;
+		delete out;
 	}
-	debug(1, "State saved as '%s'", filename.c_str());
+
+	if (saveFailed)
+		debug(1, "State save as '%s' FAILED", filename.c_str());
+	else
+		debug(1, "State saved as '%s'", filename.c_str());
 
 	pauseEngine(false);
 
-	return true;
+	return !saveFailed;
 }
 
 
@@ -1243,7 +1247,9 @@ void ScummEngine::saveOrLoad(Serializer *s) {
 			}
 			s->saveUint16(0xFFFF);	// End marker
 		} else {
-			while ((type = (ResType)s->loadUint16()) != 0xFFFF) {
+			uint16 tmp;
+			while ((tmp = s->loadUint16()) != 0xFFFF) {
+				type = (ResType)tmp;
 				while ((idx = s->loadUint16()) != 0xFFFF) {
 					assert(idx < _res->_types[type].size());
 					loadResource(s, type, idx);
@@ -1431,7 +1437,9 @@ void ScummEngine::saveOrLoad(Serializer *s) {
 			}
 		s->saveByte(0xFF);
 	} else {
-		while ((type = (ResType)s->loadByte()) != 0xFF) {
+		uint8 tmp;
+		while ((tmp = s->loadByte()) != 0xFF) {
+			type = (ResType)tmp;
 			idx = s->loadUint16();
 			_res->lock(type, idx);
 		}
@@ -1450,7 +1458,7 @@ void ScummEngine::saveOrLoad(Serializer *s) {
 		// forever, then resume playing it. This helps a lot when the audio CD
 		// is used to provide ambient music (see bug #788195).
 		if (s->isLoading() && info.playing && info.numLoops < 0)
-			_system->getAudioCDManager()->play(info.track, info.numLoops, info.start, info.duration);
+			_sound->playCDTrackInternal(info.track, info.numLoops, info.start, info.duration);
 	}
 
 

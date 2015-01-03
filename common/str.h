@@ -17,6 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
  */
 
 #ifndef COMMON_STRING_H
@@ -165,7 +166,6 @@ public:
 	 *      String: monkey.s101  Pattern: monkey.s*     => true
 	 *      String: monkey.s99   Pattern: monkey.s*1    => false
 	 *
-	 * @param str Text to be matched against the given pattern.
 	 * @param pat Glob pattern.
 	 * @param ignoreCase Whether to ignore the case when doing pattern match
 	 * @param pathMode Whether to use path mode, i.e., whether slashes must be matched explicitly.

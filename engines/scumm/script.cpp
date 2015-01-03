@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -972,6 +972,18 @@ void ScummEngine::runEntryScript() {
 		runScript(VAR(VAR_ENTRY_SCRIPT2), 0, 0, 0);
 }
 
+void ScummEngine::runQuitScript() {
+	if (VAR_QUIT_SCRIPT != 0xFF && VAR(VAR_QUIT_SCRIPT)) {
+		int args[NUM_SCRIPT_LOCAL];
+
+		memset(args, 0, sizeof(args));
+		args[0] = 2;
+		args[1] = 1003;
+
+		runScript(VAR(VAR_QUIT_SCRIPT), 0, 0, args);
+	}
+}
+
 void ScummEngine::killScriptsAndResources() {
 	ScriptSlot *ss;
 	int i;
@@ -1152,8 +1164,10 @@ void ScummEngine_v0::walkToActorOrObject(int object) {
 	VAR(7) = y;
 
 	// actor must not move if frozen
-	if (a->_miscflags & kActorMiscFlagFreeze)
+	if (a->_miscflags & kActorMiscFlagFreeze) {
 		a->stopActorMoving();
+		a->_newWalkBoxEntered = false;
+	}
 }
 
 bool ScummEngine_v0::checkPendingWalkAction() {
@@ -1167,7 +1181,7 @@ bool ScummEngine_v0::checkPendingWalkAction() {
 	Actor_v0 *a = (Actor_v0 *)derefActor(actor, "checkPendingWalkAction");
 
 	// wait until walking or turning action is finished
-	if (a->_moving)
+	if (a->_moving != 2)
 		return true;
 
 	// after walking and turning finally execute the script

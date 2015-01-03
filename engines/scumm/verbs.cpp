@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -80,6 +80,19 @@ static const VerbSettings v0VerbTable_German[] = {
 	{kVerbWhatIs,  13, 2, "Was ist"}
 };
 
+struct VerbDemo {
+	int color;
+	const char *str;
+};
+static VerbDemo v0DemoStr[] = {
+	{7,  "        MANIAC MANSION DEMO DISK        "},
+	{5,  "          from Lucasfilm Games          "},
+	{5,  "    Copyright = 1987 by Lucasfilm Ltd.  "},
+	{5,  "           All Rights Reserved.         "},
+	{0,  "                                        "},
+	{16, "       Press F7 to return to menu.      "}
+};
+
 int ScummEngine_v0::verbPrepIdType(int verbid) {
 	switch (verbid) {
 	case kVerbUse: // depends on object1
@@ -91,6 +104,44 @@ int ScummEngine_v0::verbPrepIdType(int verbid) {
 	default:
 		return kVerbPrepNone;
 	}
+}
+
+void ScummEngine_v0::verbDemoMode() {
+	int i;
+
+	for (i = 1; i < 16; i++)
+		killVerb(i);
+
+	for (i = 0; i < 6; i++) {
+		verbDrawDemoString(i);
+	}
+}
+
+void ScummEngine_v0::verbDrawDemoString(int VerbDemoNumber) {
+	byte string[80];
+	const char *ptr = v0DemoStr[VerbDemoNumber].str;
+	int i = 0, len = 0;
+
+	// Maximum length of printable characters
+	int maxChars = 40;
+	while (*ptr) {
+		if (*ptr != '@')
+			len++;
+		if (len > maxChars) {
+			break;
+		}
+
+		string[i++] = *ptr++;
+
+	}
+	string[i] = 0;
+
+	_string[2].charset = 1;
+	_string[2].ypos = _virtscr[kVerbVirtScreen].topline + (8 * VerbDemoNumber);
+	_string[2].xpos = 0;
+	_string[2].right = _virtscr[kVerbVirtScreen].w - 1;
+	_string[2].color = v0DemoStr[VerbDemoNumber].color;
+	drawString(2, (byte *)string);
 }
 
 void ScummEngine_v0::resetVerbs() {
@@ -708,7 +759,6 @@ void ScummEngine_v0::verbExec() {
 	Actor_v0 *a = (Actor_v0 *)derefActor(VAR(VAR_EGO), "verbExec");
 	int x = _virtualMouse.x / V12_X_MULTIPLIER;
 	int y = _virtualMouse.y / V12_Y_MULTIPLIER;
-	//actorSetPosInBox();
 
 	// 0xB31
 	VAR(6) = x;
@@ -717,7 +767,6 @@ void ScummEngine_v0::verbExec() {
 	if (a->_miscflags & kActorMiscFlagFreeze)
 		return;
 
-	a->stopActorMoving();
 	a->startWalkActor(VAR(6), VAR(7), -1);
 }
 
@@ -855,6 +904,10 @@ void ScummEngine_v0::checkExecVerbs() {
 				}
 			}
 		}
+	}
+		
+	if (_drawDemo && _game.features & GF_DEMO) {
+		verbDemoMode();
 	}
 
 	if (_redrawSentenceLine)

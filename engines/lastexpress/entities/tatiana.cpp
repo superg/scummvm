@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -507,7 +507,7 @@ IMPLEMENT_FUNCTION(20, Tatiana, function20)
 
 		case 2:
 			getEntities()->updatePositionExit(kEntityTatiana, kCarRestaurant, 67);
-			getSavePoints()->push(kEntityTatiana, kEntityServers0, kAction188893625);
+			getSavePoints()->push(kEntityTatiana, kEntityWaiter1, kAction188893625);
 
 			setCallback(3);
 			setup_function18();
@@ -917,7 +917,7 @@ IMPLEMENT_FUNCTION(29, Tatiana, function29)
 
 		case 2:
 			getEntities()->updatePositionExit(kEntityTatiana, kCarRestaurant, 63);
-			getSavePoints()->push(kEntityTatiana, kEntityServers1, kAction302203328);
+			getSavePoints()->push(kEntityTatiana, kEntityWaiter2, kAction302203328);
 			getEntities()->drawSequenceRight(kEntityTatiana, "805DS");
 
 			if (getEntities()->isInRestaurant(kEntityPlayer))

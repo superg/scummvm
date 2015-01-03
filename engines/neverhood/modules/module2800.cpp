@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -1475,21 +1475,6 @@ static const uint32 kScene2808FileHashes1[] = {
 static const uint32 kScene2808FileHashes2[] = {
 	0xB0396098,
 	0xB0196098
-};
-
-static const uint32 kClass428FileHashes[] = {
-	0x140022CA,
-	0x4C30A602,
-	0xB1633402,
-	0x12982135,
-	0x0540B728,
-	0x002A81E3,
-	0x08982841,
-	0x10982841,
-	0x20982841,
-	0x40982841,
-	0x80982841,
-	0x40800711
 };
 
 Scene2808::Scene2808(NeverhoodEngine *vm, Module *parentModule, int which)

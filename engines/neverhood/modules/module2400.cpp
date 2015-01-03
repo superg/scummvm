@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -168,11 +168,6 @@ static const uint32 kScene2401FileHashes2[] = {
 	0xD0910068, 0xD09100A8, 0
 };
 
-static const uint32 kScene2401FileHashes3[] = {
-	0xD0910020, 0xD0910038, 0xD0910008,
-	0xD0910068, 0xD09100A8, 0
-};
-
 static const NRect kScene2401Rects[] = {
 	{ 369, 331, 394, 389 },
 	{ 395, 331, 419, 389 },
@@ -264,11 +259,11 @@ void Scene2401::update() {
 		} else if (_pipeStatus >= 5) {
 			_ssWaterPipes[_pipeStatus]->setVisible(true);
 			_countdown1 = 8;
-			playPipeSound(kScene2401FileHashes3[getSubVar(VA_CURR_WATER_PIPES_LEVEL, _pipeStatus - 5)]);
+			playPipeSound(kScene2401FileHashes2[getSubVar(VA_CURR_WATER_PIPES_LEVEL, _pipeStatus - 5)]);
 		} else {
 			_ssWaterPipes[_pipeStatus]->setVisible(true);
 			_countdown1 = _pipeStatus == 4 ? 16 : 8;
-			playPipeSound(kScene2401FileHashes3[getSubVar(VA_GOOD_WATER_PIPES_LEVEL, _pipeStatus)]);
+			playPipeSound(kScene2401FileHashes2[getSubVar(VA_GOOD_WATER_PIPES_LEVEL, _pipeStatus)]);
 		}
 		_pipeStatus++;
 	}

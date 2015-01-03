@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -40,20 +40,6 @@
 #include "drascula/console.h"
 
 namespace Drascula {
-
-struct GameSettings {
-	const char *gameid;
-	const char *description;
-	byte id;
-	uint32 features;
-	const char *detectname;
-};
-
-static const GameSettings drasculaSettings[] = {
-	{"drascula", "Drascula game", 0, 0, 0},
-
-	{NULL, NULL, 0, 0, NULL}
-};
 
 DrasculaEngine::DrasculaEngine(OSystem *syst, const DrasculaGameDescription *gameDesc) : Engine(syst), _gameDescription(gameDesc) {
 	_charMap = 0;
@@ -193,6 +179,9 @@ DrasculaEngine::DrasculaEngine(OSystem *syst, const DrasculaGameDescription *gam
 	_rnd = new Common::RandomSource("drascula");
 
 	_console = 0;
+
+	const Common::FSNode gameDataDir(ConfMan.get("path"));
+	SearchMan.addSubDirectoryMatching(gameDataDir, "audio");
 
 	int cd_num = ConfMan.getInt("cdrom");
 	if (cd_num >= 0)

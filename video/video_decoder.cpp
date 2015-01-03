@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -530,7 +530,9 @@ Audio::Timestamp VideoDecoder::FixedRateVideoTrack::getFrameTime(uint frame) con
 	// (which Audio::Timestamp doesn't support).
 	Common::Rational frameRate = getFrameRate();
 
-	if (frameRate == frameRate.toInt()) // The nice case (a whole number)
+	// Try to keep it in terms of the frame rate, if the frame rate is a whole
+	// number.
+	if (frameRate.getDenominator() == 1)
 		return Audio::Timestamp(0, frame, frameRate.toInt());
 
 	// Convert as best as possible
@@ -776,6 +778,31 @@ void VideoDecoder::setEndTime(const Audio::Timestamp &endTime) {
 		startAudioLimit(_endTime.msecs() - startTime.msecs());
 		_lastTimeChange = startTime;
 	}
+}
+
+void VideoDecoder::setEndFrame(uint frame) {
+	VideoTrack *track = 0;
+
+	for (TrackList::iterator it = _tracks.begin(); it != _tracks.end(); it++) {
+		if ((*it)->getTrackType() == Track::kTrackTypeVideo) {
+			// We only allow this when one video track is present
+			if (track)
+				return;
+
+			track = (VideoTrack *)*it;
+		}
+	}
+
+	// If we didn't find a video track, we can't set the final frame (of course)
+	if (!track)
+		return;
+
+	Audio::Timestamp time = track->getFrameTime(frame + 1);
+
+	if (time < 0)
+		return;
+
+	setEndTime(time);
 }
 
 VideoDecoder::Track *VideoDecoder::getTrack(uint track) {

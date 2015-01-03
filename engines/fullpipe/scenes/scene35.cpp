@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -64,7 +64,7 @@ void scene35_initScene(Scene *sc) {
 		g_fp->playSound(sndId, 1);
 
 	g_fp->lift_setButton(sO_Level6, ST_LBN_6N);
-	g_fp->lift_sub5(sc, QU_SC35_ENTERLIFT, QU_SC35_EXITLIFT);
+	g_fp->lift_init(sc, QU_SC35_ENTERLIFT, QU_SC35_EXITLIFT);
 
 	g_fp->initArcadeKeys("SC_35");
 
@@ -168,7 +168,7 @@ int sceneHandler35(ExCommand *cmd) {
 		break;
 
 	case MSG_LIFT_CLICKBUTTON:
-		g_fp->lift_animation3();
+		g_fp->lift_clickButton();
 		break;
 
 	case MSG_SC35_STOPFLOW:
@@ -199,7 +199,7 @@ int sceneHandler35(ExCommand *cmd) {
 		break;
 
 	case 64:
-		g_fp->lift_sub05(cmd);
+		g_fp->lift_hoverButton(cmd);
 		break;
 
 	case 29:
@@ -208,7 +208,7 @@ int sceneHandler35(ExCommand *cmd) {
 
 			if (ani)
 				if (ani->_id == ANI_LIFTBUTTON) {
-					g_fp->lift_sub1(ani);
+					g_fp->lift_animateButton(ani);
 					cmd->_messageKind = 0;
 					break;
 				}

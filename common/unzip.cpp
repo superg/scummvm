@@ -17,6 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
  */
 
 /* unzip.c -- IO on .zip files using zlib
@@ -333,8 +334,10 @@ int unzGetLocalExtrafield(unzFile file, voidp buf, unsigned len);
 #define SIZEZIPLOCALHEADER (0x1e)
 
 
+#if 0
 const char unz_copyright[] =
    " unzip 0.15 Copyright 1998 Gilles Vollant ";
+#endif
 
 /* unz_file_info_interntal contain internal info about a file in zipfile*/
 typedef struct {

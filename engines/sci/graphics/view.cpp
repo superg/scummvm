@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -283,6 +283,7 @@ void GfxView::initData(GuiResourceId resourceId) {
 			_isScaleable = false;
 			break;
 		case 0x40:
+		case 0x4F:	// LSL6 Polish, seems to be garbage - bug #6718
 		case 0:
 			break; // don't do anything, we already have _isScaleable set
 		default:
@@ -366,7 +367,7 @@ void GfxView::initData(GuiResourceId resourceId) {
 	default:
 		error("ViewType was not detected, can't continue");
 	}
-	
+
 	// Inject our own views
 	//  Currently only used for Dual mode (speech + text) for games, that do not have a "dual" icon already
 	//  Which is Laura Bow 2 + King's Quest 6

@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
 
 			msvcVersion = atoi(argv[++i]);
 
-			if (msvcVersion != 8 && msvcVersion != 9 && msvcVersion != 10 && msvcVersion != 11 && msvcVersion != 12) {
+			if (msvcVersion != 9 && msvcVersion != 10 && msvcVersion != 11 && msvcVersion != 12) {
 				std::cerr << "ERROR: Unsupported version: \"" << msvcVersion << "\" passed to \"--msvc-version\"!\n";
 				return -1;
 			}
@@ -526,7 +526,7 @@ int main(int argc, char *argv[]) {
 
 		projectWarnings["m4"].push_back("4355");
 
-		if (msvcVersion == 8 || msvcVersion == 9)
+		if (msvcVersion == 9)
 			provider = new CreateProjectTool::VisualStudioProvider(globalWarnings, projectWarnings, msvcVersion);
 		else
 			provider = new CreateProjectTool::MSBuildProvider(globalWarnings, projectWarnings, msvcVersion);
@@ -619,10 +619,10 @@ void displayHelp(const char *exe) {
 	        "\n"
 	        "MSVC specific settings:\n"
 	        " --msvc-version version   set the targeted MSVC version. Possible values:\n"
-	        "                           8 stands for \"Visual Studio 2005\"\n"
 	        "                           9 stands for \"Visual Studio 2008\"\n"
 	        "                           10 stands for \"Visual Studio 2010\"\n"
 	        "                           11 stands for \"Visual Studio 2012\"\n"
+	        "                           12 stands for \"Visual Studio 2013\"\n"
 	        "                           The default is \"9\", thus \"Visual Studio 2008\"\n"
 	        " --build-events           Run custom build events as part of the build\n"
 	        "                          (default: false)\n"
@@ -1305,6 +1305,7 @@ void ProjectProvider::createProject(BuildSetup &setup) {
 		createModuleList(setup.srcDir + "/audio", setup.defines, setup.testDirs, in, ex);
 		createModuleList(setup.srcDir + "/audio/softsynth/mt32", setup.defines, setup.testDirs, in, ex);
 		createModuleList(setup.srcDir + "/video", setup.defines, setup.testDirs, in, ex);
+		createModuleList(setup.srcDir + "/image", setup.defines, setup.testDirs, in, ex);
 
 		// Resource files
 		in.push_back(setup.srcDir + "/icons/" + setup.projectName + ".ico");

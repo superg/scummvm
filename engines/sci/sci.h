@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -314,13 +314,16 @@ public:
 	 *					if NULL is passed no subtitle will be added to the returned string
 	 * @return processed string
 	 */
-	Common::String strSplit(const char *str, const char *sep = "\r----------\r");
+	Common::String strSplitLanguage(const char *str, uint16 *splitLanguage, const char *sep = "\r----------\r");
+	Common::String strSplit(const char *str, const char *sep = "\r----------\r") {
+		return strSplitLanguage(str, NULL, sep);
+	}
 
 	kLanguage getSciLanguage();
 	void setSciLanguage(kLanguage lang);
 	void setSciLanguage();
 
-	Common::String getSciLanguageString(const Common::String &str, kLanguage lang, kLanguage *lang2 = NULL) const;
+	Common::String getSciLanguageString(const Common::String &str, kLanguage lang, kLanguage *lang2 = NULL, uint16 *languageSplitter = NULL) const;
 
 	// Check if vocabulary needs to get switched (in multilingual parser games)
 	void checkVocabularySwitch();
@@ -427,6 +430,12 @@ extern SciEngine *g_sci;
  * Convenience function to obtain the active SCI version.
  */
 SciVersion getSciVersion();
+
+/**
+ * Same as above, but this version doesn't assert on unknown SCI versions.
+ * Only used by the fallback detector
+ */
+SciVersion getSciVersionForDetection();
 
 /**
  * Convenience function converting an SCI version into a human-readable string.

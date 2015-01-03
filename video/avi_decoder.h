@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -43,9 +43,11 @@ namespace Graphics {
 struct PixelFormat;
 }
 
-namespace Video {
-
+namespace Image {
 class Codec;
+}
+
+namespace Video {
 
 /**
  * Decoder for AVI videos.
@@ -183,6 +185,9 @@ protected:
 		void loadPaletteFromChunk(Common::SeekableReadStream *chunk);
 		void useInitialPalette();
 
+		bool isTruemotion1() const;
+		void forceDimensions(uint16 width, uint16 height);
+
 		bool isRewindable() const { return true; }
 		bool rewind();
 
@@ -197,9 +202,9 @@ protected:
 		mutable bool _dirtyPalette;
 		int _frameCount, _curFrame;
 
-		Codec *_videoCodec;
+		Image::Codec *_videoCodec;
 		const Graphics::Surface *_lastFrame;
-		Codec *createCodec();
+		Image::Codec *createCodec();
 	};
 
 	class AVIAudioTrack : public AudioTrack {
@@ -210,7 +215,9 @@ protected:
 		virtual void queueSound(Common::SeekableReadStream *stream);
 		Audio::Mixer::SoundType getSoundType() const { return _soundType; }
 		void skipAudio(const Audio::Timestamp &time, const Audio::Timestamp &frameTime);
-		void resetStream();
+		virtual void resetStream();
+		uint32 getCurChunk() const { return _curChunk; }
+		void setCurChunk(uint32 chunk) { _curChunk = chunk; }
 
 		bool isRewindable() const { return true; }
 		bool rewind();
@@ -224,6 +231,7 @@ protected:
 			kWaveFormatPCM = 1,
 			kWaveFormatMSADPCM = 2,
 			kWaveFormatMSIMAADPCM = 17,
+			kWaveFormatMP3 = 85,
 			kWaveFormatDK3 = 98		// rogue format number
 		};
 
@@ -232,6 +240,15 @@ protected:
 		Audio::Mixer::SoundType _soundType;
 		Audio::QueuingAudioStream *_audStream;
 		Audio::QueuingAudioStream *createAudioStream();
+		uint32 _curChunk;
+	};
+
+	struct TrackStatus {
+		TrackStatus();
+
+		Track *track;
+		uint32 index;
+		uint32 chunkSearchOffset;
 	};
 
 	AVIHeader _header;
@@ -254,7 +271,11 @@ protected:
 	void handleStreamHeader(uint32 size);
 	uint16 getStreamType(uint32 tag) const { return tag & 0xFFFF; }
 	byte getStreamIndex(uint32 tag) const;
-	void forceVideoEnd();
+	void checkTruemotion1();
+
+	void handleNextPacket(TrackStatus& status);
+	bool shouldQueueAudio(TrackStatus& status);
+	Common::Array<TrackStatus> _videoTracks, _audioTracks;
 
 public:
 	virtual AVIAudioTrack *createAudioTrack(AVIStreamHeader sHeader, PCMWaveFormat wvInfo);

@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -148,7 +148,7 @@ void Scene::printSurfaces(Console *con) {
 		NDrawRect drawRect = _surfaces[index]->getDrawRect();
 		NRect clipRect = _surfaces[index]->getClipRect();
 		int priority = _surfaces[index]->getPriority();
-		con->DebugPrintf("%d ('%s'): Priority %d, draw rect (%d, %d, %d, %d), clip rect (%d, %d, %d, %d)\n",
+		con->debugPrintf("%d ('%s'): Priority %d, draw rect (%d, %d, %d, %d), clip rect (%d, %d, %d, %d)\n",
 			index, _surfaces[index]->getName().c_str(), priority,
 			drawRect.x, drawRect.y, drawRect.x2(), drawRect.y2(),
 			clipRect.x1, clipRect.y1, clipRect.x2, clipRect.y2);

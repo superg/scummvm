@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -219,7 +219,7 @@ Common::Error SciEngine::run() {
 	// Add the after market GM patches for the specified game, if they exist
 	_resMan->addNewGMPatch(_gameId);
 	_gameObjectAddress = _resMan->findGameObject();
-	
+
 	_scriptPatcher = new ScriptPatcher();
 	SegManager *segMan = new SegManager(_resMan, _scriptPatcher);
 
@@ -285,6 +285,11 @@ Common::Error SciEngine::run() {
 		initStackBaseWithSelector(SELECTOR(play));
 		// We set this, so that the game automatically quit right after init
 		_gamestate->variables[VAR_GLOBAL][4] = TRUE_REG;
+
+		// Jones only initializes its menus when restarting/restoring, thus set
+		// the gameIsRestarting flag here before initializing. Fixes bug #6536.
+		if (g_sci->getGameId() == GID_JONES)
+			_gamestate->gameIsRestarting = GAMEISRESTARTING_RESTORE;
 
 		_gamestate->_executionStackPosChanged = false;
 		run_vm(_gamestate);
@@ -506,6 +511,7 @@ void SciEngine::patchGameSaveRestore() {
 	case GID_HOYLE1: // gets confused, although the game doesnt support saving/restoring at all
 	case GID_HOYLE2: // gets confused, see hoyle1
 	case GID_JONES: // gets confused, when we patch us in, the game is only able to save to 1 slot, so hooking is not required
+	case GID_MOTHERGOOSE: // mother goose EGA saves/restores directly and has no save/restore dialogs
 	case GID_MOTHERGOOSE256: // mother goose saves/restores directly and has no save/restore dialogs
 	case GID_PHANTASMAGORIA: // has custom save/load code
 	case GID_SHIVERS: // has custom save/load code
@@ -576,7 +582,7 @@ bool SciEngine::initGame() {
 
 	// Script 0 should always be at segment 1
 	if (script0Segment != 1) {
-		debug(2, "Failed to instantiate script.000");
+		debug(2, "Failed to instantiate script 0");
 		return false;
 	}
 
@@ -890,7 +896,7 @@ void SciEngine::syncSoundSettings() {
 bool SciEngine::speechAndSubtitlesEnabled() {
 	bool subtitlesOn = ConfMan.getBool("subtitles");
 	bool speechOn = !ConfMan.getBool("speech_mute");
-	
+
 	if (isCD() && subtitlesOn && speechOn)
 		return true;
 	return false;
@@ -930,7 +936,7 @@ void SciEngine::updateScummVMAudioOptions() {
 	// depending on the in-game settings
 	if (isCD() && getSciVersion() == SCI_VERSION_1_1) {
 		uint16 ingameSetting = _gamestate->variables[VAR_GLOBAL][90].getOffset();
-		
+
 		switch (ingameSetting) {
 		case 1:
 			// subtitles

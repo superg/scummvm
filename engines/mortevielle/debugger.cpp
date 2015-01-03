@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -27,9 +27,9 @@ namespace Mortevielle {
 
 Debugger::Debugger(MortevielleEngine *vm) : GUI::Debugger() {
 	_vm = vm;
-	DCmd_Register("continue", WRAP_METHOD(Debugger, Cmd_Exit));
-	DCmd_Register("show_questions", WRAP_METHOD(Debugger, Cmd_showAllQuestions));
-	DCmd_Register("reset_parano", WRAP_METHOD(Debugger, Cmd_resetParano));
+	registerCmd("continue", WRAP_METHOD(Debugger, cmdExit));
+	registerCmd("show_questions", WRAP_METHOD(Debugger, Cmd_showAllQuestions));
+	registerCmd("reset_parano", WRAP_METHOD(Debugger, Cmd_resetParano));
 }
 
 bool Debugger::Cmd_showAllQuestions(int argc, const char **argv) {

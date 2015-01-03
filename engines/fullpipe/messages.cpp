@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -26,6 +26,7 @@
 #include "fullpipe/messages.h"
 #include "fullpipe/modal.h"
 #include "fullpipe/statics.h"
+#include "fullpipe/gameloader.h"
 
 namespace Fullpipe {
 
@@ -47,7 +48,7 @@ ExCommand *ExCommand::createClone() {
 	return new ExCommand(this);
 }
 
-ExCommand::ExCommand(int16 parentId, int messageKind, int messageNum, int x, int y, int a7, int a8, int sceneClickX, int sceneClickY, int a11) : 
+ExCommand::ExCommand(int16 parentId, int messageKind, int messageNum, int x, int y, int a7, int a8, int sceneClickX, int sceneClickY, int a11) :
 	Message(parentId, messageKind, x, y, a7, a8, sceneClickX, sceneClickY, a11) {
 	_field_3C = 1;
 	_messageNum = messageNum;
@@ -182,7 +183,7 @@ ExCommand2 *ExCommand2::createClone() {
 
 Message::Message() {
 	_messageKind = 0;
-	_parentId = 0;		
+	_parentId = 0;
 
 	_x = 0;
 	_y = 0;
@@ -394,8 +395,18 @@ void MessageQueue::update() {
 }
 
 void MessageQueue::messageQueueCallback1(int par) {
-	// Autosave
-	debug(3, "STUB: MessageQueue::messageQueueCallback1()");
+	if (g_fp->_isSaveAllowed && par == 16) {
+		if (g_fp->_globalMessageQueueList->size() && (*g_fp->_globalMessageQueueList)[0] != 0) {
+			for (uint i = 0; i < g_fp->_globalMessageQueueList->size(); i++) {
+				if ((*g_fp->_globalMessageQueueList)[i]->_flags & 1)
+					if ((*g_fp->_globalMessageQueueList)[i] != this && !(*g_fp->_globalMessageQueueList)[i]->_isFinished)
+						return;
+			}
+		}
+
+		if (g_fp->_currentScene)
+			g_fp->_gameLoader->writeSavegame(g_fp->_currentScene, "savetmp.sav");
+	}
 }
 
 void MessageQueue::addExCommand(ExCommand *ex) {
@@ -610,6 +621,23 @@ void MessageQueue::changeParam28ForObjectId(int objId, int oldParam28, int newPa
     }
 }
 
+int MessageQueue::activateExCommandsByKind(int kind) {
+	int res = 0;
+
+	for (uint i = 0; i < getCount(); i++) {
+		ExCommand *ex = getExCommandByIndex(i);
+
+		if (ex->_messageKind == kind) {
+			ex->_messageKind = 0;
+			ex->_excFlags |= 1;
+
+			res++;
+		}
+	}
+
+	return res;
+}
+
 MessageQueue *GlobalMessageQueueList::getMessageQueueById(int id) {
 	for (Common::Array<MessageQueue *>::iterator s = begin(); s != end(); ++s) {
 		if ((*s)->_id == id)
@@ -680,6 +708,10 @@ void GlobalMessageQueueList::addMessageQueue(MessageQueue *msg) {
 	msg->setFlags(msg->getFlags() | 2);
 
 	push_back(msg);
+}
+
+void clearGlobalMessageQueueList() {
+	g_fp->_globalMessageQueueList->clear();
 }
 
 void clearGlobalMessageQueueList1() {
@@ -883,7 +915,7 @@ void processMessages() {
 }
 
 void updateGlobalMessageQueue(int id, int objid) {
-	MessageQueue *m = g_fp->_globalMessageQueueList->getMessageQueueById(id);  
+	MessageQueue *m = g_fp->_globalMessageQueueList->getMessageQueueById(id);
 	if (m) {
 		m->update();
 	}

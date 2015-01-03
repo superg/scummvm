@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -573,16 +573,6 @@ uint32 AsScene2806Spew::handleMessage(int messageNum, const MessageParam &param,
 	}
 	return messageResult;
 }
-
-static const uint32 kScene2808FileHashes1[] = {
-	0x90B0392,
-	0x90B0192
-};
-
-static const uint32 kScene2808FileHashes2[] = {
-	0xB0396098,
-	0xB0196098
-};
 
 static const uint32 kClass428FileHashes[] = {
 	0x140022CA,

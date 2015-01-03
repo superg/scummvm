@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -709,13 +709,14 @@ Scene1405::Scene1405(NeverhoodEngine *vm, Module *parentModule)
 
 void Scene1405::update() {
 	Scene::update();
+	// Check if the player chose a wrong tile, in which case the whole grid gets reset
 	if (_countdown != 0 && (--_countdown == 0)) {
 		_tilesLeft = 48;
-		_tiles[_firstTileIndex]->hide();
-		_tiles[_secondTileIndex]->hide();
+		_tiles[_firstTileIndex]->hide(true);
+		_tiles[_secondTileIndex]->hide(false);
 		for (uint32 i = 0; i < 48; i++) {
 			if (getSubVar(VA_IS_TILE_MATCH, i)) {
-				_tiles[i]->hide();
+				_tiles[i]->hide(false);
 				setSubVar(VA_IS_TILE_MATCH, i, 0);
 			}
 		}

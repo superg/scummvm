@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -437,7 +437,7 @@ IMPLEMENT_FUNCTION(19, Rebecca, function19)
 			break;
 
 		case 2:
-			getSavePoints()->push(kEntityRebecca, kEntityServers0, kAction337548856);
+			getSavePoints()->push(kEntityRebecca, kEntityWaiter1, kAction337548856);
 			getEntities()->drawSequenceRight(kEntityRebecca, "810DS");
 			if (getEntities()->isInRestaurant(kEntityPlayer))
 				getEntities()->updateFrame(kEntityRebecca);
@@ -850,7 +850,7 @@ IMPLEMENT_FUNCTION(24, Rebecca, function24)
 		break;
 
 	case kActionNone:
-		Entity::timeCheckSavepoint(kTime1134000, params->param2, kEntityRebecca, kEntityServers0, kAction223712416);
+		Entity::timeCheckSavepoint(kTime1134000, params->param2, kEntityRebecca, kEntityWaiter1, kAction223712416);
 
 		if (!params->param1)
 			break;
@@ -920,7 +920,7 @@ IMPLEMENT_FUNCTION(24, Rebecca, function24)
 			break;
 
 		case 8:
-			getSavePoints()->push(kEntityRebecca, kEntityServers0, kAction136702400);
+			getSavePoints()->push(kEntityRebecca, kEntityWaiter1, kAction136702400);
 			getEntities()->drawSequenceLeft(kEntityRebecca, "012G");
 			params->param1 = 1;
 			break;
@@ -928,7 +928,7 @@ IMPLEMENT_FUNCTION(24, Rebecca, function24)
 		break;
 
 	case kAction123712592:
-		getEntities()->drawSequenceLeft(kEntityServers0, "BLANK");
+		getEntities()->drawSequenceLeft(kEntityWaiter1, "BLANK");
 		getEntities()->drawSequenceLeft(kEntityRebecca, "012E");
 
 		setCallback(8);
@@ -1244,7 +1244,7 @@ IMPLEMENT_FUNCTION(34, Rebecca, function34)
 
 			params->param2 = kTimeInvalid;
 
-			getSavePoints()->push(kEntityRebecca, kEntityServers0, kAction223712416);
+			getSavePoints()->push(kEntityRebecca, kEntityWaiter1, kAction223712416);
 		}
 
 		Entity::timeCheckCallback(kTime2052000, params->param3, 1, WRAP_SETUP_FUNCTION(Rebecca, setup_function19));
@@ -1280,7 +1280,7 @@ IMPLEMENT_FUNCTION(34, Rebecca, function34)
 			break;
 
 		case 4:
-			getSavePoints()->push(kEntityRebecca, kEntityServers0, kAction136702400);
+			getSavePoints()->push(kEntityRebecca, kEntityWaiter1, kAction136702400);
 			getEntities()->drawSequenceLeft(kEntityRebecca, "012G");
 			params->param1 = 1;
 			break;
@@ -1288,7 +1288,7 @@ IMPLEMENT_FUNCTION(34, Rebecca, function34)
 		break;
 
 	case kAction123712592:
-		getEntities()->drawSequenceLeft(kEntityServers0, "BLANK");
+		getEntities()->drawSequenceLeft(kEntityWaiter1, "BLANK");
 		getSound()->playSound(kEntityRebecca, "Reb3003");
 
 		setCallback(4);
@@ -1624,7 +1624,7 @@ IMPLEMENT_FUNCTION(44, Rebecca, function44)
 
 			params->param3 = kTimeInvalid;
 
-			getSavePoints()->push(kEntityRebecca, kEntityServers0, kAction223712416);
+			getSavePoints()->push(kEntityRebecca, kEntityWaiter1, kAction223712416);
 		}
 
 label_next:
@@ -1684,7 +1684,7 @@ label_callback_2:
 			break;
 
 		case 4:
-			getSavePoints()->push(kEntityRebecca, kEntityServers0, kAction136702400);
+			getSavePoints()->push(kEntityRebecca, kEntityWaiter1, kAction136702400);
 			getEntities()->drawSequenceLeft(kEntityRebecca, "012G");
 			params->param2 = 1;
 			break;

@@ -25,7 +25,6 @@
 
 #include "audio/audiostream.h"
 
-
 namespace Common {
 class SeekableReadStream;
 }
@@ -39,6 +38,45 @@ struct SoundParams {
 	uint32 rate;
 	bool stereo;
 	bool packed;
+	bool bits16;
+};
+
+/**
+ * This is a ADPCM stream-reader, this class holds context for multi-chunk reading and no buffers.
+ */
+class RawChunkStream {
+public:
+	RawChunkStream(bool stereo);
+
+	~RawChunkStream() {
+	}
+private:
+	uint _stereo;
+
+	/**
+	 * Holds the frequency and index from the last sample
+	 * 0 holds the left channel, 1 holds the right channel
+	 */
+	struct {
+		int32 sample;
+		int16 index;
+	} _lastSample[2];
+
+	static const int16 _stepAdjustmentTable[8];
+	static const int32 _amplitudeLookupTable[89];
+
+public:
+
+	struct RawChunk {
+		int16 *data;
+		uint32 size;
+	};
+
+	void init();
+	//Read next audio portion in new stream (needed for avi), return structure with buffer
+	RawChunk readNextChunk(Common::SeekableReadStream *stream);
+	//Read numSamples from stream to buffer
+	int readBuffer(int16 *buffer, Common::SeekableReadStream *stream, const int numSamples);
 };
 
 /**
@@ -52,8 +90,8 @@ public:
 	}
 
 public:
-	static const SoundParams _zNemSoundParamLookupTable[6];
-	static const SoundParams _zgiSoundParamLookupTable[5];
+	static const SoundParams _zNemSoundParamLookupTable[32];
+	static const SoundParams _zgiSoundParamLookupTable[24];
 
 private:
 	const int _rate;                                           // Sample rate of stream
@@ -62,43 +100,27 @@ private:
 	bool _endOfData;                                           // Whether the stream end has been reached
 	uint _stereo;
 
-	/** 
-	 * Holds the frequency and index from the last sample
-	 * 0 holds the left channel, 1 holds the right channel
-	 */
-	struct {
-		int32 sample;
-		int16 index;
-	} _lastSample[2];
-
-	static const int16 _stepAdjustmentTable[8];
-	static const int32 _amplitudeLookupTable[89];
+	RawChunkStream _streamReader;
 
 public:
 	int readBuffer(int16 *buffer, const int numSamples);
 
-	bool isStereo() const { return true; }
-	bool endOfData() const { return _endOfData; }
+	bool isStereo() const {
+		return _stereo;
+	}
+	bool endOfData() const {
+		return _endOfData;
+	}
 
-	int getRate() const { return _rate; }
-	Audio::Timestamp getLength() const { return _playtime; }
+	int getRate() const {
+		return _rate;
+	}
+	Audio::Timestamp getLength() const {
+		return _playtime;
+	}
 
 	bool rewind();
 };
-
-/**
- * Creates an audio stream, which plays from the given buffer.
- *
- * @param buffer     Buffer to play from.
- * @param size       Size of the buffer in bytes.
- * @param rate       Rate of the sound data.
- * @param dispose    AfterUse Whether to free the buffer after use (with free!).
- * @return           The new SeekableAudioStream (or 0 on failure).
- */
-Audio::RewindableAudioStream *makeRawZorkStream(const byte *buffer, uint32 size,
-                                                int rate,
-                                                bool stereo,
-                                                DisposeAfterUse::Flag disposeAfterUse = DisposeAfterUse::YES);
 
 /**
  * Creates an audio stream, which plays from the given stream.
@@ -109,9 +131,9 @@ Audio::RewindableAudioStream *makeRawZorkStream(const byte *buffer, uint32 size,
  * @return           The new SeekableAudioStream (or 0 on failure).
  */
 Audio::RewindableAudioStream *makeRawZorkStream(Common::SeekableReadStream *stream,
-                                                int rate,
-                                                bool stereo,
-                                                DisposeAfterUse::Flag disposeAfterUse = DisposeAfterUse::YES);
+        int rate,
+        bool stereo,
+        DisposeAfterUse::Flag disposeAfterUse = DisposeAfterUse::YES);
 
 Audio::RewindableAudioStream *makeRawZorkStream(const Common::String &filePath, ZVision *engine);
 

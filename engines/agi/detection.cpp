@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -145,6 +145,13 @@ static const ExtraGuiOption agiExtraGuiOption = {
 	false
 };
 
+static const ExtraGuiOption agiExtraGuiOptionAmiga = {
+	_s("Use an alternative palette"),
+	_s("Use an alternative palette, common for all Amiga games. This was the old behavior"),
+	"altamigapalette",
+	false
+};
+
 #include "agi/detection_tables.h"
 
 using namespace Agi;
@@ -230,6 +237,8 @@ bool AgiMetaEngine::createInstance(OSystem *syst, Engine **engine, const ADGameD
 const ExtraGuiOptions AgiMetaEngine::getExtraGuiOptions(const Common::String &target) const {
 	ExtraGuiOptions options;
 	options.push_back(agiExtraGuiOption);
+	if (target.contains("-amiga"))
+		options.push_back(agiExtraGuiOptionAmiga);
 	return options;
 }
 
@@ -267,15 +276,13 @@ SaveStateList AgiMetaEngine::listSaves(const char *target) const {
 int AgiMetaEngine::getMaximumSaveSlot() const { return 999; }
 
 void AgiMetaEngine::removeSaveState(const char *target, int slot) const {
-	char fileName[MAXPATHLEN];
-	sprintf(fileName, "%s.%03d", target, slot);
+	Common::String fileName = Common::String::format("%s.%03d", target, slot);
 	g_system->getSavefileManager()->removeSavefile(fileName);
 }
 
 SaveStateDescriptor AgiMetaEngine::querySaveMetaInfos(const char *target, int slot) const {
 	const uint32 AGIflag = MKTAG('A','G','I',':');
-	char fileName[MAXPATHLEN];
-	sprintf(fileName, "%s.%03d", target, slot);
+	Common::String fileName = Common::String::format("%s.%03d", target, slot);
 
 	Common::InSaveFile *in = g_system->getSavefileManager()->openForLoading(fileName);
 

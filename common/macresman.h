@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -58,7 +58,7 @@ public:
 	 * This uses SearchMan to find the data/resource forks. This should only be used
 	 * from inside an engine.
 	 *
-	 * @param filename The base file name of the file
+	 * @param fileName The base file name of the file
 	 * @note This will check for the raw resource fork, MacBinary, and AppleDouble formats.
 	 * @return True on success
 	 */
@@ -68,7 +68,7 @@ public:
 	 * Open a Mac data/resource fork pair.
 	 *
 	 * @param path The path that holds the forks
-	 * @param filename The base file name of the file
+	 * @param fileName The base file name of the file
 	 * @note This will check for the raw resource fork, MacBinary, and AppleDouble formats.
 	 * @return True on success
 	 */
@@ -76,7 +76,7 @@ public:
 
 	/**
 	 * See if a Mac data/resource fork pair exists.
-	 * @param filename The base file name of the file
+	 * @param fileName The base file name of the file
 	 * @return True if either a data fork or resource fork with this name exists
 	 */
 	static bool exists(const String &fileName);

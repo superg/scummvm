@@ -17,6 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
  */
 
 #ifndef GRAPHICS_SURFACE_H
@@ -213,7 +214,7 @@ public:
 	 * of buffer must match the pixel format of the Surface.
 	 *
 	 * @param buffer    The buffer containing the graphics data source
-	 * @param pitch     The pitch of the buffer (number of bytes in a scanline)
+	 * @param srcPitch     The pitch of the buffer (number of bytes in a scanline)
 	 * @param destX     The x coordinate of the destination rectangle
 	 * @param destY     The y coordinate of the destination rectangle
 	 * @param width     The width of the destination rectangle
@@ -228,7 +229,6 @@ public:
 	 * @param destX         The x coordinate of the destination rectangle
 	 * @param destY         The y coordinate of the destination rectangle
 	 * @param subRect       The subRect of surface to be blitted
-	 * @return                
 	 */
 	void copyRectToSurface(const Graphics::Surface &srcSurface, int destX, int destY, const Common::Rect subRect);
 

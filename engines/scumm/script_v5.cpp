@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -544,7 +544,7 @@ void ScummEngine_v5::o5_setClass() {
 		} else if (cls == 0) {
 			// Class '0' means: clean all class data
 			_classData[obj] = 0;
-			if ((_game.features & GF_SMALL_HEADER) && obj <= _numActors) {
+			if ((_game.features & GF_SMALL_HEADER) && objIsActor(obj)) {
 				Actor *a = derefActor(obj, "o5_setClass");
 				a->_ignoreBoxes = false;
 				a->_forceClip = 0;
@@ -2497,10 +2497,6 @@ void ScummEngine_v5::walkActorToActor(int actor, int toActor, int dist) {
 		y = abr.y;
 	}
 	a->startWalkActor(x, y, -1);
-
-	// WORKAROUND: See bug #2971126 for details on why this is here.
-	if (_game.version == 0)
-		o5_breakHere();
 }
 
 void ScummEngine_v5::o5_walkActorToActor() {

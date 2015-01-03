@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -95,7 +95,7 @@ BaseObject::BaseObject(BaseGame *inGame) : BaseScriptHolder(inGame) {
 	_sFXType = SFX_NONE;
 	_sFXParam1 = _sFXParam2 = _sFXParam3 = _sFXParam4 = 0;
 
-	_blendMode = BLEND_NORMAL;
+	_blendMode = Graphics::BLEND_NORMAL;
 }
 
 
@@ -807,10 +807,10 @@ bool BaseObject::scSetProperty(const char *name, ScValue *value) {
 	//////////////////////////////////////////////////////////////////////////
 	else if (strcmp(name, "BlendMode") == 0) {
 		int i = value->getInt();
-		if (i < BLEND_NORMAL || i >= NUM_BLEND_MODES) {
-			i = BLEND_NORMAL;
+		if (i < Graphics::BLEND_NORMAL || i >= Graphics::NUM_BLEND_MODES) {
+			i = Graphics::BLEND_NORMAL;
 		}
-		_blendMode = (TSpriteBlendMode)i;
+		_blendMode = (Graphics::TSpriteBlendMode)i;
 		return STATUS_OK;
 	}
 

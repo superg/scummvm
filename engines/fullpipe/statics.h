@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -47,6 +47,7 @@ class StepArray : public CObject {
 	Common::Point *getCurrPoint(Common::Point *point);
 	Common::Point *getPoint(Common::Point *point, int index, int offset);
 	bool gotoNextPoint();
+	void insertPoints(Common::Point **points, int pointsCount);
 };
 
 class StaticPhase : public Picture {
@@ -97,6 +98,7 @@ class Statics : public DynamicPhase {
 	virtual ~Statics();
 
 	virtual bool load(MfcArchive &file);
+	virtual void init();
 	Statics *getStaticsById(int itemId);
 
 	Common::Point *getSomeXY(Common::Point &p);
@@ -120,7 +122,7 @@ class Movement : public GameObject {
 	int _field_50;
 	int _counterMax;
 	int _counter;
-	PtrList _dynamicPhases;
+	Common::Array<DynamicPhase *> _dynamicPhases;
 	int _field_78;
 	Common::Point **_framePosOffsets;
 	Movement *_currMovement;
@@ -144,7 +146,7 @@ class Movement : public GameObject {
 	Common::Point *getCenter(Common::Point *p);
 	Common::Point *getDimensionsOfPhase(Common::Point *p, int phaseIndex);
 
-	Common::Point *calcSomeXY(Common::Point &p, int idx);
+	Common::Point *calcSomeXY(Common::Point &p, int idx, int dynidx);
 
 	void initStatics(StaticANIObject *ani);
 	void updateCurrDynamicPhase();
@@ -180,8 +182,8 @@ class StaticANIObject : public GameObject {
 	int _initialCounter;
 	void (*_callback1)(int, Common::Point *point, int, int);
 	void (*_callback2)(int *);
-	PtrList _movements;
-	PtrList _staticsList;
+	Common::Array<Movement *> _movements;
+	Common::Array<Statics *> _staticsList;
 	StepArray _stepArray;
 	int16 _field_96;
 	int _messageQueueId;
@@ -216,7 +218,7 @@ public:
 	void setAlpha(int alpha);
 
 	void deleteFromGlobalMessageQueue();
-	void queueMessageQueue(MessageQueue *msg);
+	bool queueMessageQueue(MessageQueue *msg);
 	void restartMessageQueue(MessageQueue *msg);
 	MessageQueue *getMessageQueue();
 	bool trySetMessageQueue(int msgNum, int qId);
@@ -224,6 +226,7 @@ public:
 
 	void initMovements();
 	void loadMovementsPixelData();
+	void freeMovementsPixelData();
 	void preloadMovements(MovTable *mt);
 
 	void setSomeDynamicPhaseIndex(int val) { _someDynamicPhaseIndex = val; }
@@ -244,6 +247,7 @@ public:
 	void draw2();
 
 	MovTable *countMovements();
+	Common::Point *calcStepLen(Common::Point *p);
 	void setSpeed(int speed);
 
 	void updateStepPos();

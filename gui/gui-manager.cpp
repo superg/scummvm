@@ -17,6 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
  */
 
 #include "common/events.h"
@@ -127,7 +128,7 @@ void GuiManager::initKeymap() {
 	act = new Action(guiMap, "REMP", _("Remap keys"));
 	act->addEvent(EVENT_KEYMAPPER_REMAP);
 
-	act = new Action(guiMap, "FULS", _("Toggle FullScreen"));
+	act = new Action(guiMap, "FULS", _("Toggle fullscreen"));
 	act->addKeyEvent(KeyState(KEYCODE_RETURN, ASCII_RETURN, KBD_ALT));
 
 	mapper->addGlobalKeymap(guiMap);

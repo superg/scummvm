@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -80,7 +80,7 @@ public:
 	void kernelGraphUpdateBox(const Common::Rect &rect, bool hiresMode);
 	void kernelGraphRedrawBox(Common::Rect rect);
 
-	reg_t kernelDisplay(const char *text, int argc, reg_t *argv);
+	reg_t kernelDisplay(const char *text, uint16 languageSplitter, int argc, reg_t *argv);
 
 	reg_t kernelPortraitLoad(const Common::String &resourceName);
 	void kernelPortraitShow(const Common::String &resourceName, Common::Point position, uint16 resourceNum, uint16 noun, uint16 verb, uint16 cond, uint16 seq);

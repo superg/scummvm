@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -57,9 +57,9 @@ void scene16_initScene(Scene *sc) {
 
 		boy[1] = new StaticANIObject(boy[0]);
 		sc->addStaticANIObject(boy[1], 1);
-		
+
 		int idx = 0;
-		
+
 		for (int i = 0; i < 3; i++) {
 			g_vars->scene16_figures.push_back(boy[idx]);
 
@@ -68,7 +68,7 @@ void scene16_initScene(Scene *sc) {
 			if (idx >= 2)
 				idx = 0;
 		}
-		
+
 		g_vars->scene16_figures.push_back(sc->getStaticANIObject1ById(ANI_GIRL, -1));
 
 		for (int i = 0; i < 4; i++) {
@@ -182,7 +182,7 @@ void sceneHandler16_fillMug() {
 			mq = new MessageQueue(g_fp->_currentScene->getMessageQueueById(QU_SC16_BOYOUT), 0, 1);
 
 			mq->replaceKeyCode(-1, g_vars->scene16_walkingBoy->_okeyCode);
-			if (mq->chain(g_vars->scene16_walkingBoy) || !mq)
+			if (!mq || mq->chain(g_vars->scene16_walkingBoy))
 				return;
 		} else {
 			if (!g_vars->scene16_walkingGirl)
@@ -259,7 +259,7 @@ void sceneHandler16_drink() {
 							mq = new MessageQueue(g_fp->_currentScene->getMessageQueueById(QU_SC16_BOYKICK), 0, 1);
 
 							mq->replaceKeyCode(-1, g_vars->scene16_walkingBoy->_okeyCode);
-							
+
 							ex = new ExCommand(ANI_MAN, 34, 384, 0, 0, 0, 1, 0, 0, 0);
 							ex->_excFlags |= 3u;
 							ex->_field_14 = 384;

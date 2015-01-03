@@ -17,6 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
  */
 
 #include "engines/metaengine.h"
@@ -240,7 +241,7 @@ void AboutDialog::drawDialog() {
 			while (*str && *str == ' ')
 				str++;
 
-		if (*str) 
+		if (*str)
 			g_gui.theme()->drawText(Common::Rect(_x + _xOff, y, _x + _w - _xOff, y + g_gui.theme()->getFontHeight()), str, state, align, ThemeEngine::kTextInversionNone, 0, false, ThemeEngine::kFontStyleBold, ThemeEngine::kFontColorNormal, true, _textDrawableArea);
 		y += _lineHeight;
 	}

@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -320,6 +320,7 @@ void ScummEngine_v90he::setupScummVars() {
 	ScummEngine_v80he::setupScummVars();
 
 	VAR_TIMER = 97;
+	VAR_QUIT_SCRIPT = 102;
 	VAR_SCRIPT_CYCLE = 103;
 	VAR_NUM_SCRIPT_CYCLES = 104;
 
@@ -714,7 +715,7 @@ void ScummEngine_v99he::resetScummVars() {
 		VAR(140) = 0;
 #endif
 	}
-	
+
 	if (_game.id == GID_PUTTZOO && _game.heversion == 100 && _game.platform == Common::kPlatformWindows) {
 		// Specific to Nimbus Games version.
 		VAR(156) = 1;
@@ -805,7 +806,7 @@ void ScummEngine::resetScummVars() {
 	}
 
 	if (VAR_DEBUGMODE != 0xFF) {
-		VAR(VAR_DEBUGMODE) = _debugMode;
+		VAR(VAR_DEBUGMODE) = (_debugMode ? 1 : 0);
 		if (_game.heversion >= 80 && _debugMode)
 			VAR(85) = 1;
 	}

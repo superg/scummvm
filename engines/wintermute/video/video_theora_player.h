@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -31,6 +31,7 @@
 
 #include "engines/wintermute/base/base.h"
 #include "engines/wintermute/persistent.h"
+#include "engines/wintermute/video/video_subtitler.h"
 #include "video/video_decoder.h"
 #include "common/stream.h"
 #include "graphics/surface.h"
@@ -59,7 +60,7 @@ public:
 	Common::String _filename;
 
 	BaseSurface *_texture;
-	//CVidSubtitler *_subtitler;
+	VideoSubtitler *_subtitler;
 
 	// control methods
 	bool initialize(const Common::String &filename, const Common::String &subtitleFile = Common::String());
@@ -137,9 +138,10 @@ private:
 
 	bool _playbackStarted;
 
+	bool _foundSubtitles;
+
 	// helpers
 	void SetDefaults();
-
 };
 
 } // End of namespace Wintermute

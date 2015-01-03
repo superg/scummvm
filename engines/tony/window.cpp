@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -53,9 +53,9 @@ RMWindow::~RMWindow() {
  * Initializes the graphics window
  */
 void RMWindow::init() {
-	Graphics::PixelFormat pixelFormat(2, 5, 5, 5, 0, 10, 5, 0, 0);
+	Graphics::PixelFormat pixelFormat(2, 5, 6, 5, 0, 11, 5, 0, 0);
 	initGraphics(RM_SX, RM_SY, true, &pixelFormat);
-	
+
 	reset();
 }
 
@@ -83,7 +83,7 @@ void RMWindow::copyRectToScreen(const byte *buf, int pitch, int x, int y, int w,
 		for (int i = 0; i < h; i++) {
 			uint16 *dst = (uint16 *)screen->getBasePtr(x, y + i);
 			for (int j = 0; j < w; j++) {
-				dst[j] = RMGfxTargetBuffer::_precalcTable[src[j] & 0x7FFF];
+				dst[j] = RMGfxTargetBuffer::_precalcTable[src[j]];
 			}
 			src += (pitch / 2);
 		}
@@ -291,8 +291,8 @@ void RMSnapshot::grabScreenshot(byte *lpBuf, int dezoom, uint16 *lpDestBuf) {
 				cursrc = &src[RM_SKIPX + x];
 
 				*curOut++ = ((*cursrc) & 0x1F) << 3;
-				*curOut++ = (((*cursrc) >> 5) & 0x1F) << 3;
-				*curOut++ = (((*cursrc) >> 10) & 0x1F) << 3;
+				*curOut++ = (((*cursrc) >> 5) & 0x3F) << 3;
+				*curOut++ = (((*cursrc) >> 11) & 0x1F) << 3;
 
 				if (lpDestBuf)
 					*lpDestBuf++ = *cursrc;
@@ -319,8 +319,8 @@ void RMSnapshot::grabScreenshot(byte *lpBuf, int dezoom, uint16 *lpDestBuf) {
 							curv = v;
 
 						sommab += cursrc[curv * RM_BBX + u] & 0x1F;
-						sommag += (cursrc[curv * RM_BBX + u] >> 5) & 0x1F;
-						sommar += (cursrc[curv * RM_BBX + u] >> 10) & 0x1F;
+						sommag += (cursrc[curv * RM_BBX + u] >> 6) & 0x1F;
+						sommar += (cursrc[curv * RM_BBX + u] >> 11) & 0x1F;
 					}
 				}
 				_rgb[k + 0] = (byte)(sommab * 8 / (dezoom * dezoom));

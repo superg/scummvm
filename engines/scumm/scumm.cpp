@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -205,7 +205,7 @@ ScummEngine::ScummEngine(OSystem *syst, const DetectorResult &dr)
 	_lastInputScriptTime = 0;
 	_bootParam = 0;
 	_dumpScripts = false;
-	_debugMode = 0;
+	_debugMode = false;
 	_objectOwnerTable = NULL;
 	_objectRoomTable = NULL;
 	_objectStateTable = NULL;
@@ -467,6 +467,8 @@ ScummEngine::ScummEngine(OSystem *syst, const DetectorResult &dr)
 	VAR_NUM_SCRIPT_CYCLES = 0xFF;
 	VAR_SCRIPT_CYCLE = 0xFF;
 
+	VAR_QUIT_SCRIPT = 0xFF;
+
 	VAR_NUM_GLOBAL_OBJS = 0xFF;
 
 	// Use g_scumm from error() ONLY
@@ -714,7 +716,7 @@ ScummEngine_v2::ScummEngine_v2(OSystem *syst, const DetectorResult &dr)
 
 ScummEngine_v0::ScummEngine_v0(OSystem *syst, const DetectorResult &dr)
 	: ScummEngine_v2(syst, dr) {
-
+	_drawDemo = false;
 	_currentMode = 0;
 	_currentLights = 0;
 
@@ -729,6 +731,9 @@ ScummEngine_v0::ScummEngine_v0(OSystem *syst, const DetectorResult &dr)
 	VAR_ACTIVE_OBJECT2 = 0xFF;
 	VAR_IS_SOUND_RUNNING = 0xFF;
 	VAR_ACTIVE_VERB = 0xFF;
+
+	if (strcmp(dr.fp.pattern, "maniacdemo.d64") == 0 )
+		_game.features |= GF_DEMO; 
 }
 
 ScummEngine_v6::ScummEngine_v6(OSystem *syst, const DetectorResult &dr)
@@ -1026,6 +1031,35 @@ Common::Error ScummEngine::init() {
 	}
 #endif
 
+	// Extra directories needed for the Steam versions
+	if (_filenamePattern.genMethod == kGenDiskNumSteam || _filenamePattern.genMethod == kGenRoomNumSteam) {
+		if (_game.platform == Common::kPlatformWindows) {
+			switch (_game.id) {
+			case GID_INDY3 :
+				SearchMan.addSubDirectoryMatching(gameDataDir, "indy3");
+				break;
+			case GID_INDY4 :
+				SearchMan.addSubDirectoryMatching(gameDataDir, "atlantis");
+				break;
+			case GID_LOOM :
+				SearchMan.addSubDirectoryMatching(gameDataDir, "loom");
+				break;
+#ifdef ENABLE_SCUMM_7_8
+			case GID_DIG :
+				SearchMan.addSubDirectoryMatching(gameDataDir, "dig");
+				SearchMan.addSubDirectoryMatching(gameDataDir, "dig/video");
+				break;
+#endif
+			default:
+				break;
+			}
+		} else {
+			SearchMan.addSubDirectoryMatching(gameDataDir, "Contents");
+			SearchMan.addSubDirectoryMatching(gameDataDir, "Contents/MacOS");
+			SearchMan.addSubDirectoryMatching(gameDataDir, "Contents/Resources");
+			SearchMan.addSubDirectoryMatching(gameDataDir, "Contents/Resources/video");
+		}
+	}
 
 	// The	kGenUnchanged method is only used for 'container files', i.e. files
 	// that contain the real game files bundled together in an archive format.
@@ -1060,8 +1094,13 @@ Common::Error ScummEngine::init() {
 			const char *tmpBuf1, *tmpBuf2;
 			assert(_game.id == GID_MANIAC || _game.id == GID_ZAK);
 			if (_game.id == GID_MANIAC) {
-				tmpBuf1 = "maniac1.d64";
-				tmpBuf2 = "maniac2.d64";
+				if (_game.features & GF_DEMO) {
+					tmpBuf1 = "maniacdemo.d64";
+					tmpBuf2 = "maniacdemo.d64";
+				} else {
+					tmpBuf1 = "maniac1.d64";
+					tmpBuf2 = "maniac2.d64";
+				}
 			} else {
 				tmpBuf1 = "zak1.d64";
 				tmpBuf2 = "zak2.d64";
@@ -1126,14 +1165,29 @@ Common::Error ScummEngine::init() {
 				error("Couldn't find known subfile inside container file '%s'", _containerFile.c_str());
 
 			_fileHandle->close();
-
 		} else {
 			error("kGenUnchanged used with unsupported platform");
 		}
 	} else {
-		// Regular access, no container file involved
-		_fileHandle = new ScummFile();
+		if (_filenamePattern.genMethod == kGenDiskNumSteam || _filenamePattern.genMethod == kGenRoomNumSteam) {
+			// Steam game versions have the index file embedded in the main executable
+			const SteamIndexFile *indexFile = lookUpSteamIndexFile(_filenamePattern.pattern, _game.platform);
+			if (!indexFile || indexFile->id != _game.id) {
+				error("Couldn't find index file description for Steam version");
+			} else {
+				_fileHandle = new ScummSteamFile(*indexFile);
+			}
+		} else {
+			// Regular access, no container file involved
+			_fileHandle = new ScummFile();
+		}
 	}
+
+	// Steam Win and Mac versions share the same DOS data files. We show Windows or Mac
+	// for the platform the detector, but internally we force the platform to DOS, so that
+	// the code for handling the original DOS data files is used.
+	if (_filenamePattern.genMethod == kGenDiskNumSteam || _filenamePattern.genMethod == kGenRoomNumSteam)
+		_game.platform = Common::kPlatformDOS;
 
 	// Load CJK font, if present
 	// Load it earlier so _useCJKMode variable could be set
@@ -1218,7 +1272,7 @@ Common::Error ScummEngine::init() {
 
 void ScummEngine::setupScumm() {
 	// On some systems it's not safe to run CD audio games from the CD.
-	if (_game.features & GF_AUDIOTRACKS) {
+	if (_game.features & GF_AUDIOTRACKS && !Common::File::exists("CDDA.SOU")) {
 		checkCD();
 
 		int cd_num = ConfMan.getInt("cdrom");
@@ -2029,6 +2083,7 @@ Common::Error ScummEngine::go() {
 
 		if (shouldQuit()) {
 			// TODO: Maybe perform an autosave on exit?
+			runQuitScript();
 		}
 	}
 
@@ -2281,7 +2336,7 @@ void ScummEngine::scummLoop_updateScummVars() {
 		VAR(VAR_MOUSE_Y) = _mouse.y;
 		if (VAR_DEBUGMODE != 0xFF) {
 			// This is NOT for the Mac version of Indy3/Loom
-			VAR(VAR_DEBUGMODE) = _debugMode;
+			VAR(VAR_DEBUGMODE) = (_debugMode ? 1 : 0);
 		}
 	} else if (_game.version >= 1) {
 		// We use shifts below instead of dividing by V12_X_MULTIPLIER resp.
@@ -2525,7 +2580,7 @@ void ScummEngine::runBootscript() {
 	int args[NUM_SCRIPT_LOCAL];
 	memset(args, 0, sizeof(args));
 	args[0] = _bootParam;
-	if (_game.id == GID_MANIAC && (_game.features & GF_DEMO))
+	if (_game.id == GID_MANIAC && (_game.features & GF_DEMO) && (_game.platform != Common::kPlatformC64))
 		runScript(9, 0, 0, args);
 	else
 		runScript(1, 0, 0, args);

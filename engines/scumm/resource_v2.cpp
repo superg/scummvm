@@ -8,12 +8,12 @@
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -34,8 +34,14 @@ void ScummEngine_v2::readClassicIndexFile() {
 			_numGlobalObjects = 256;
 			_numRooms = 55;
 			_numCostumes = 25;
-			_numScripts = 160;
-			_numSounds = 70;
+			if (_game.features & GF_DEMO) {
+				_numScripts = 55;
+				_numSounds = 40;
+			} else {
+				_numScripts = 160;
+				_numSounds = 70; 
+			}
+
 		} else if (_game.platform == Common::kPlatformNES) {
 			_numGlobalObjects = 775;
 			_numRooms = 55;
