@@ -6,7 +6,7 @@
 #include "common/file.h"
 #include "common/system.h"
 #include "engines/util.h"
-#include "graphics/decoders/bmp.h"
+//#include "graphics/decoders/bmp.h"
 #include "graphics/palette.h"
 #include "graphics/surface.h"
 #include "video/flic_decoder.h"
@@ -158,7 +158,7 @@ void GagEngine::ExtractCdf(const Common::String &a_fn)
 
 
 void GagEngine::BitmapTest()
-{
+{/*
 	Graphics::BitmapDecoder bitmap_decoder;
 	Common::File file;
 	file.open("AUTORUN.BMP", *m_Archive);
@@ -169,21 +169,20 @@ void GagEngine::BitmapTest()
 		_system->updateScreen();
 		surface->free();
 		delete surface;
-	}
+	}*/
 }
 
 
 void GagEngine::AnimationTest()
 {
 //	TestPlayAnimation("LOGO1.MVZ");
+//	TestPlayAnimation("WC0501.MOV");
 
 	Common::ArchiveMemberList member_list;
 	m_Archive->listMembers(member_list);
 	for(Common::ArchiveMemberList::iterator it = member_list.begin(); it != member_list.end(); ++it)
 	{
-//		if(!(*it)->getName().hasSuffix(".FLC"))
-//		if(!(*it)->getName().hasSuffix(".MOV"))
-		if(!(*it)->getName().hasSuffix(".MVZ"))
+		if(/*!(*it)->getName().hasSuffix(".FLC") &&*/ !(*it)->getName().hasSuffix(".MOV") && !(*it)->getName().hasSuffix(".MVZ"))
 			continue;
 
 		debug("playing: %s", (*it)->getName().c_str());
@@ -195,7 +194,7 @@ void GagEngine::AnimationTest()
 }
 
 
-#define ANIMATION_FAST_TEST
+//#define ANIMATION_FAST_TEST
 
 
 void GagEngine::TestPlayAnimation(Common::String fn)

@@ -30,7 +30,7 @@ namespace Video
 {
 
 FlicDecoder::FlicDecoder()
-	: _fileStream(nullptr)
+	: _fileStream(NULL)
 {
 	;
 }
@@ -49,62 +49,25 @@ bool FlicDecoder::loadStream(Common::SeekableReadStream *stream) {
 void FlicDecoder::close() {
 	VideoDecoder::close();
 
-	if (_fileStream != nullptr) {
+	if (_fileStream != NULL) {
 		delete _fileStream;
-		_fileStream = nullptr;
+		_fileStream = NULL;
 	}
 }
 
 
 const Common::List<Common::Rect> &FlicDecoder::getDirtyRects() const {
-	return _videoTrack->getDirtyRects();
+	return getVideoTrack()->getDirtyRects();
 }
 
 
 void FlicDecoder::clearDirtyRects() {
-	_videoTrack->clearDirtyRects();
+	getVideoTrack()->clearDirtyRects();
 }
 
 
 void FlicDecoder::copyDirtyRectsToBuffer(uint8 *dst, uint pitch) {
-	_videoTrack->copyDirtyRectsToBuffer(dst, pitch);
-}
-
-
-void FlicDecoder::readNextPacket() {
-	FrameHeader header;
-	if (_fileStream->read(&header, sizeof(header)) != sizeof(header))
-		error("FlicDecoder::readNextPacket(): FLC file is corrupted");
-	header.fix();
-
-	if (header.type != _TYPE_FRAME)
-		error("FlicDecoder::readNextPacket(): unknown frame header type (type = 0x%02X)", header.type);
-
-	// extended attributes
-	if (header.delay)
-		_videoTrack->setDelay(header.delay);
-	if (header.width || header.height) {
-		if (!header.width)
-			header.width = _videoTrack->getWidth();
-		if (!header.height)
-			header.height = _videoTrack->getHeight();
-
-		_videoTrack->reallocateSurface(header.width, header.height);
-	}
-
-	// exclude header size
-	uint32 data_size = header.size - sizeof(header);
-	if (data_size) {
-		uint8 *data = new uint8[data_size];
-		if (_fileStream->read(data, data_size) != data_size)
-			error("FlicDecoder::readNextPacket(): FLC file is corrupted");
-
-		decodeFrame(header, data);
-
-		delete [] data;
-	}
-
-	_videoTrack->updateFrame();
+	getVideoTrack()->copyDirtyRectsToBuffer(dst, pitch);
 }
 
 
@@ -114,11 +77,6 @@ bool FlicDecoder::readHeader(FlicHeader &flic_header, Common::SeekableReadStream
 		return false;
 	}
 	flic_header.fix();
-
-	if (flic_header.size > (uint32)_fileStream->size()) {
-		warning("FlicDecoder::loadStream(): incomplete FLC file");
-		return false;
-	}
 
 	if (flic_header.type != _TYPE_FLC) {
 		warning("FlicDecoder::loadStream(): attempted to load non-FLC data (type = 0x%04X)", flic_header.type);
@@ -134,6 +92,55 @@ bool FlicDecoder::readHeader(FlicHeader &flic_header, Common::SeekableReadStream
 }
 
 
+const FlicDecoder::FlicVideoTrack *FlicDecoder::getVideoTrack() const
+{
+	return static_cast<FlicVideoTrack *>(const_cast<Track *>(getTrack(0)));
+}
+
+
+FlicDecoder::FlicVideoTrack *FlicDecoder::getVideoTrack()
+{
+	return static_cast<FlicVideoTrack *>(getTrack(0));
+}
+
+
+void FlicDecoder::readNextPacket() {
+	FrameHeader header;
+	if (_fileStream->read(&header, sizeof(header)) != sizeof(header))
+		error("FlicDecoder::readNextPacket(): FLC file is corrupted");
+	header.fix();
+
+	if (header.type != _TYPE_FRAME)
+		error("FlicDecoder::readNextPacket(): unknown frame header type (type = 0x%02X)", header.type);
+
+	// extended attributes
+	if (header.delay)
+		getVideoTrack()->setDelay(header.delay);
+	if (header.width || header.height) {
+		if (!header.width)
+			header.width = getVideoTrack()->getWidth();
+		if (!header.height)
+			header.height = getVideoTrack()->getHeight();
+
+		getVideoTrack()->reallocateSurface(header.width, header.height);
+	}
+
+	// exclude header size
+	uint32 data_size = header.size - sizeof(header);
+	if (data_size) {
+		uint8 *data = new uint8[data_size];
+		if (_fileStream->read(data, data_size) != data_size)
+			error("FlicDecoder::readNextPacket(): FLC file is corrupted");
+
+		decodeFrame(header, data);
+
+		delete [] data;
+	}
+
+	getVideoTrack()->updateFrame();
+}
+
+
 void FlicDecoder::decodeFrame(const FrameHeader &a_frame_header, const uint8 *a_data) {
 	for (uint16 i = 0; i < a_frame_header.chunks; ++i) {
 		ChunkHeader chunk = *(const ChunkHeader *)a_data;
@@ -142,11 +149,11 @@ void FlicDecoder::decodeFrame(const FrameHeader &a_frame_header, const uint8 *a_
 
 		switch (chunk.type) {
 		case COLOR_256:
-			_videoTrack->decodeColor256(a_data);
+			getVideoTrack()->decodeColor256(a_data);
 			break;
 
 		case DELTA_FLC:
-			_videoTrack->decodeDeltaFLC(a_data);
+			getVideoTrack()->decodeDeltaFLC(a_data);
 			break;
 
 		case COLOR_64:
@@ -155,15 +162,15 @@ void FlicDecoder::decodeFrame(const FrameHeader &a_frame_header, const uint8 *a_
 			break;
 
 		case BLACK:
-			_videoTrack->decodeBlack(a_data);
+			getVideoTrack()->decodeBlack(a_data);
 			break;
 
 		case BYTE_RUN:
-			_videoTrack->decodeByteRun(a_data);
+			getVideoTrack()->decodeByteRun(a_data);
 			break;
 
 		case LITERAL:
-			_videoTrack->decodeLiteral(a_data);
+			getVideoTrack()->decodeLiteral(a_data);
 			break;
 
 		case PSTAMP:
@@ -171,7 +178,7 @@ void FlicDecoder::decodeFrame(const FrameHeader &a_frame_header, const uint8 *a_
 			break;
 
 		default:
-			_videoTrack->decodeExtended(chunk.type, a_data);
+			decodeExtended(chunk.type, a_data);
 			break;
 		}
 
@@ -180,8 +187,13 @@ void FlicDecoder::decodeFrame(const FrameHeader &a_frame_header, const uint8 *a_
 }
 
 
+void FlicDecoder::decodeExtended(uint16 a_type, const uint8 *) {
+	error("FlicDecoder::decodeExtended(): unknown chunk type (type = 0x%02X)", a_type);
+}
+
+
 FlicDecoder::FlicVideoTrack::FlicVideoTrack(const FlicHeader &a_flic_header, Common::SeekableReadStream *stream)
-	: _surface(nullptr)
+	: _surface(NULL)
 	, _stream(stream)
 	, _frameCount(a_flic_header.frames)
 	, _startFrameDelay(a_flic_header.delay)
@@ -286,7 +298,7 @@ void FlicDecoder::FlicVideoTrack::copyDirtyRectsToBuffer(uint8 *dst, uint pitch)
 
 void FlicDecoder::FlicVideoTrack::reallocateSurface(uint16 a_width, uint16 a_height) {
 
-	if (_surface != nullptr) {
+	if (_surface != NULL) {
 		_surface->free();
 		delete _surface;
 	}
@@ -422,11 +434,6 @@ void FlicDecoder::FlicVideoTrack::decodeLiteral(const uint8 *a_data) {
 
 	_dirtyRects.clear();
 	_dirtyRects.push_back(Common::Rect(0, 0, getWidth(), getHeight()));
-}
-
-
-void FlicDecoder::FlicVideoTrack::decodeExtended(uint16 a_type, const uint8 *) {
-	error("FlicDecoder::FlicVideoTrack::decodeExtended(): unknown chunk type (type = 0x%02X)", a_type);
 }
 
 

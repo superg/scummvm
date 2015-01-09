@@ -1,3 +1,4 @@
+#include "audio/decoders/raw.h"
 #include "gag_flic_decoder.h"
 
 
@@ -5,11 +6,9 @@
 namespace Gag
 {
 
-const uint GagFlicDecoder::_TRACK_AUDIO = 1;
-
-
 GagFlicDecoder::GagFlicDecoder()
 	: Video::FlicDecoder()
+	, _audioTrack(NULL)
 {
 	;
 }
@@ -27,6 +26,65 @@ bool GagFlicDecoder::loadStream(Common::SeekableReadStream *stream)
 }
 
 
+const GagFlicDecoder::GagFlicVideoTrack *GagFlicDecoder::getVideoTrack() const
+{
+	return static_cast<GagFlicVideoTrack *>(const_cast<Track *>(getTrack(0)));
+}
+
+
+GagFlicDecoder::GagFlicVideoTrack *GagFlicDecoder::getVideoTrack()
+{
+	return static_cast<GagFlicVideoTrack *>(getTrack(0));
+}
+
+
+void GagFlicDecoder::decodeExtended(uint16 a_type, const uint8 *a_data)
+{
+	GagSubchunkType type = (GagSubchunkType)a_type;
+	switch(type)
+	{
+	case GAG_MVZ5:
+	case GAG_MVZ8:
+	{
+		MvzFrameHeader header = *(const MvzFrameHeader *)a_data;
+		header.fix();
+
+		getVideoTrack()->DecodeGagVideoMVZ(header, a_data + sizeof(header), type == GAG_MVZ8);
+	}
+		break;
+
+	case GAG_SND_PCM1:
+//		debug("GAG_SND_PCM1");
+		_audioTrack->queueBuffer(a_data, 256000);
+		break;
+
+	case GAG_SND_PCM2:
+//		debug("GAG_SND_PCM2");
+		_audioTrack->queueBuffer(a_data, 128000);
+		break;
+
+	case GAG_SND_STOP:
+//		debug("GAG_SND_STOP");
+		_audioTrack->setEndOfTrack();
+		;
+		break;
+
+	case GAG_SND_CTRL:
+		if(_audioTrack == NULL)
+		{
+			WavFmtHeader wav_fmt_header = *(const WavFmtHeader *)a_data;
+			wav_fmt_header.fix();
+			_audioTrack = new GagFlicAudioTrack(wav_fmt_header);
+			addTrack(_audioTrack);
+		}
+		break;
+
+	default:
+		debug("warning: subchunk type not implemented (type: %d)", a_type);
+	}
+}
+
+
 GagFlicDecoder::GagFlicVideoTrack::GagFlicVideoTrack(const FlicHeader &a_flic_header, Common::SeekableReadStream *stream)
 	: FlicVideoTrack(a_flic_header, stream)
 {
@@ -37,77 +95,6 @@ GagFlicDecoder::GagFlicVideoTrack::GagFlicVideoTrack(const FlicHeader &a_flic_he
 GagFlicDecoder::GagFlicVideoTrack::~GagFlicVideoTrack()
 {
 	;
-}
-
-
-void GagFlicDecoder::GagFlicVideoTrack::MvzFrameHeader::Fix()
-{
-	area_width = FROM_LE_16(area_width);
-	area_height = FROM_LE_16(area_height);
-	area_offset_x = FROM_LE_16(area_offset_x);
-	area_offset_y = FROM_LE_16(area_offset_y);
-	width = FROM_LE_16(width);
-	height = FROM_LE_16(height);
-	unknown1 = FROM_LE_16(unknown1);
-	unknown2 = FROM_LE_16(unknown2);
-}
-
-
-void GagFlicDecoder::GagFlicVideoTrack::WavFmtHeader::Fix()
-{
-	wave_id = FROM_BE_32(wave_id);
-	chunk_id = FROM_BE_32(chunk_id);
-	chunk_size = FROM_LE_32(chunk_size);
-	wave_type = FROM_LE_16(wave_type);
-	channels_count = FROM_LE_16(channels_count);
-	sample_rate = FROM_LE_32(sample_rate);
-	data_rate = FROM_LE_32(data_rate);
-	block_align = FROM_LE_16(block_align);
-	bits_per_sec = FROM_LE_16(bits_per_sec);
-}
-
-
-void GagFlicDecoder::GagFlicVideoTrack::decodeExtended(uint16 a_type, const uint8 *a_data)
-{
-	GagSubchunkType type = (GagSubchunkType)a_type;
-	switch(type)
-	{
-	case GAG_MVZ5:
-	case GAG_MVZ8:
-	{
-		MvzFrameHeader header = *(const MvzFrameHeader *)a_data;
-		header.Fix();
-
-		DecodeGagVideoMVZ(header, a_data + sizeof(header), type == GAG_MVZ8);
-	}
-		break;
-/*
-	case GAG_SND_PCM1:
-		;
-		break;
-
-	case GAG_SND_PCM2:
-		;
-		break;
-
-	case GAG_SND_STOP:
-		;
-		break;
-*//*
-	case GAG_SND_CTRL:
-	{
-		const Track *track = getTrack(_TRACK_AUDIO);
-		if(track == nullptr)
-		{
-			track = new GagFlicAudioTrack(data);
-			addTrack(_audioTrack);
-		}
-	}*/
-		break;
-
-	default:
-		debug("warning: subchunk type not implemented (type: %d)", a_type);
-	}
 }
 
 
@@ -193,21 +180,50 @@ void GagFlicDecoder::GagFlicVideoTrack::DecodeGagVideoMVZ(const MvzFrameHeader &
 }
 
 
-GagFlicDecoder::GagFlicAudioTrack::GagFlicAudioTrack()
+GagFlicDecoder::GagFlicAudioTrack::GagFlicAudioTrack(const WavFmtHeader &a_wav_fmt_header)
 {
-	;
+	_endOfTrack = false;
+	_bps16 = a_wav_fmt_header.bits_per_sample == 16;
+	_audStream = Audio::makeQueuingAudioStream(a_wav_fmt_header.sample_rate, a_wav_fmt_header.channels_count > 1);
 }
 
 
 GagFlicDecoder::GagFlicAudioTrack::~GagFlicAudioTrack()
 {
-	;
+	delete _audStream;
+}
+
+
+bool GagFlicDecoder::GagFlicAudioTrack::endOfTrack() const
+{
+	return /*AudioTrack::endOfTrack() &&*/ _endOfTrack;
 }
 
 
 Audio::AudioStream *GagFlicDecoder::GagFlicAudioTrack::getAudioStream() const
 {
-	return nullptr;
+	return _audStream;
+}
+
+
+void GagFlicDecoder::GagFlicAudioTrack::queueBuffer(const byte *a_buffer, uint32 a_size)
+{
+	byte flags = Audio::FLAG_LITTLE_ENDIAN;
+	if(_bps16)
+		flags |= Audio::FLAG_16BITS;
+
+	if(_audStream->isStereo())
+		flags |= Audio::FLAG_STEREO;
+
+	byte *buffer = (byte *)malloc(a_size);
+	memcpy(buffer, a_buffer, a_size);
+	_audStream->queueBuffer(buffer, a_size, DisposeAfterUse::YES, flags);
+}
+
+
+void GagFlicDecoder::GagFlicAudioTrack::setEndOfTrack()
+{
+	_endOfTrack = true;
 }
 
 }

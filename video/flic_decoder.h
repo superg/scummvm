@@ -157,7 +157,6 @@ protected:
 		void decodeLiteral(const uint8 *a_data);
 		void decodeByteRun(const uint8 *a_data);
 		void decodeDeltaFLC(const uint8 *a_data);
-		virtual void decodeExtended(uint16 a_type, const uint8 *a_data);
 
 	protected:
 		Graphics::Surface *_surface;
@@ -187,12 +186,13 @@ protected:
 		FlicHeader flic_header;
 		bool success = readHeader(flic_header, _fileStream);
 		if (success) {
-			_videoTrack = new T(flic_header, _fileStream);
-			addTrack(_videoTrack);
+			addTrack(new T(flic_header, _fileStream));
 		}
 
 		return success;
 	}
+
+	bool readHeader(FlicHeader &flic_header, Common::SeekableReadStream *stream);
 
 private:
 	enum DeltaOpcodeType {
@@ -229,11 +229,12 @@ private:
 	static const uint _FLC_PALETTE_ENTRY_SIZE = 3;
 
 	Common::SeekableReadStream *_fileStream;
-	FlicVideoTrack *_videoTrack;
 
+	const FlicVideoTrack *getVideoTrack() const;
+	FlicVideoTrack *getVideoTrack();
 	virtual void readNextPacket();
-	bool readHeader(FlicHeader &flic_header, Common::SeekableReadStream *stream);
 	void decodeFrame(const FrameHeader &a_frame_header, const uint8 *a_data);
+	virtual void decodeExtended(uint16 a_type, const uint8 *a_data);
 };
 
 }
