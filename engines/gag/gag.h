@@ -6,11 +6,13 @@
 #include "common/archive.h"
 #include "common/error.h"
 #include "common/hashmap.h"
+#include "common/list.h"
 #include "common/ptr.h"
 #include "common/str.h"
 #include "common/system.h"
 #include "engines/engine.h"
 #include "graphics/pixelformat.h"
+#include <test/cxxtest/cxxtest/Mock.h>
 
 
 
@@ -46,21 +48,47 @@ private:
 	static const int _SCREEN_HEIGHT;
 	static const int _SCREEN_FPS;
 
-	// script
+	// ************ SCRIPT ************
+	enum TransitionMode
+	{
+		TM_NOFADE,
+		TM_PALFADE,
+		TM_FRAMEFADE
+	};
+
+	struct Event
+	{
+		Common::String name;
+
+		Common::String script;
+		Common::String section;
+		TransitionMode transition_mode;
+	};
+
+
 	static const Common::String _DEFAULT_SCRIPT;
 	static const Common::String _DEFAULT_SECTION;
+	static const Common::String _END_SECTION;
+	static const char _OPTION_PREFIX;
+	static const char _ARGUMENT_DELIMITER;
 
-	GameState _state;
 	Common::String _script;
 	Common::String _section;
-	Common::ScopedPtr<Common::Archive> _archive;
+	Common::List<Event> _events;
+
 	Common::HashMap<Common::String, Common::Error (GagEngine::*)(const Common::String &)> _commandCallbacks;
+	// ********************************
+
+	GameState _state;
+	Common::ScopedPtr<Common::Archive> _archive;
 
 	void Init();
 	Common::Error Update();
 
 	Common::Error StateActive();
 	Common::Error StateScript();
+
+	Common::String ParseOption(Common::Array<Common::String> &arguments, Common::String option);
 
 	Common::Error ScriptCatch(const Common::String &value);
 	Common::Error ScriptClass(const Common::String &value);
@@ -91,9 +119,9 @@ private:
 	Common::Error ScriptVolume(const Common::String &value);
 	Common::Error ScriptZone(const Common::String &value);
 
-/*
 	//DEBUG
 	void ExtractCdf(const Common::String &a_fn);
+/*
 	void BitmapTest();
 	void AnimationTest();
 	void TestPlayAnimation(Common::String fn);

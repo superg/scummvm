@@ -54,19 +54,15 @@ void GagFlicDecoder::decodeExtended(uint16 a_type, const uint8 *a_data)
 		break;
 
 	case GAG_SND_PCM1:
-//		debug("GAG_SND_PCM1");
 		_audioTrack->queueBuffer(a_data, 256000);
 		break;
 
 	case GAG_SND_PCM2:
-//		debug("GAG_SND_PCM2");
 		_audioTrack->queueBuffer(a_data, 128000);
 		break;
 
 	case GAG_SND_STOP:
-//		debug("GAG_SND_STOP");
 		_audioTrack->setEndOfTrack();
-		;
 		break;
 
 	case GAG_SND_CTRL:
@@ -196,6 +192,7 @@ GagFlicDecoder::GagFlicAudioTrack::~GagFlicAudioTrack()
 
 bool GagFlicDecoder::GagFlicAudioTrack::endOfTrack() const
 {
+	//TODO: investigate how does it work on the original engine
 	return /*AudioTrack::endOfTrack() &&*/ _endOfTrack;
 }
 

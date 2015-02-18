@@ -3,6 +3,7 @@
 #include "common/debug.h"
 #include "common/events.h"
 #include "common/file.h"
+#include "common/tokenizer.h"
 #include "engines/util.h"
 //#include "graphics/decoders/bmp.h"
 //#include "graphics/palette.h"
@@ -10,6 +11,14 @@
 #include "cdf_archive.h"
 #include "gag_flic_decoder.h"
 #include "gag.h"
+
+
+#define DEBUG_SKIM_SCRIPT
+
+#ifdef DEBUG_SKIM_SCRIPT
+#include <set>
+std::set<Common::String> G_STRING_SET;
+#endif
 
 
 
@@ -22,6 +31,10 @@ const int GagEngine::_SCREEN_HEIGHT(480);
 const int GagEngine::_SCREEN_FPS(60);
 const Common::String GagEngine::_DEFAULT_SCRIPT("START.CFG");
 const Common::String GagEngine::_DEFAULT_SECTION("CFG");
+const Common::String GagEngine::_END_SECTION("END");
+const char GagEngine::_OPTION_PREFIX = '/';
+const char GagEngine::_ARGUMENT_DELIMITER = ':';
+
 
 
 GagEngine::GagEngine(OSystem *syst)
@@ -83,15 +96,13 @@ Common::Error GagEngine::run()
 		uint32 time_spent = time_end >= time_start ? time_end - time_start : std::numeric_limits<uint32>::max() - time_start + time_end + 1;
 
 		// sleep remaining frame time
-		_system->delayMillis(1000 / _SCREEN_FPS - time_spent);
+		uint time_for_frame = 1000 / _SCREEN_FPS;
+		_system->delayMillis(time_spent < time_for_frame ? time_for_frame - time_spent : 0);
 	}
 	while(status.getCode() == Common::kNoError && !shouldQuit());
 
 	return status;
 }
-
-
-//#define GAG_INIT_DEBUG
 
 
 void GagEngine::Init()
@@ -103,19 +114,25 @@ void GagEngine::Init()
 //	_archive.reset(new CdfArchive("Gag01.cdf", false));
 
 	//DEBUG
-#ifdef GAG_INIT_DEBUG
-//	_script = "scripts_gagru.cfg";
-	_section = "AURICP";
+#ifdef DEBUG_SKIM_SCRIPT
+	_script = "GAG_CMD_CLEAN.CFG";
+//	_section = "CFG";
 	Common::Error script_error = StateScript();
-	debug("test");
+//	debug("event options: ");
+//	for(std::set<Common::String>::iterator it = G_STRING_SET.begin(); it != G_STRING_SET.end(); ++it)
+//		debug("\t%s", it->c_str());
 	quitGame();
 	_state = GS_ACTIVE;
+#endif
 
 //	ExtractCdf("Gag01.cdf");
+//	ExtractCdf("Gag02.cdf");
+//	ExtractCdf("gag01.cdf");
+//	ExtractCdf("GAG3.cdf");
+//	ExtractCdf("GARY.cdf");
 //	BitmapTest();
 //	AnimationTest();
 //	AnimationTuckerTest();
-#endif
 }
 
 
@@ -133,9 +150,6 @@ Common::Error GagEngine::Update()
 		status = StateScript();
 		_state = GS_ACTIVE;
 		break;
-
-	default:
-		status = Common::kUnknownError;
 	}
 
 	return status;
@@ -176,285 +190,536 @@ Common::Error GagEngine::StateScript()
 	Common::Error status(Common::kNoError);
 
 	Common::File file;
-	if(!file.open(_script, *_archive))
-		status = Common::kReadingFailed;
-
-	// simple script parsing: skim through, find section and execute commands
-	ParserState parse_state(PS_SECTION_SEARCH);
-	Common::String buffer;
-	Common::String command_name;
-
-	bool done(false);
-	while(!file.eos())
+	if(file.open(_script, *_archive))
 	{
-		// add space multi line command support
-		Common::String line = file.readLine() + ' ';
-		if(file.err())
-		{
-			status = Common::kReadingFailed;
-			break;
-		}
+		// simple script parsing: skim through, find section and execute commands
+		ParserState parse_state(PS_SECTION_SEARCH);
+		Common::String buffer;
+		Common::String command_name;
 
-		bool skip_line(false);
-		for(Common::String::const_iterator it = line.begin(); it != line.end(); ++it)
+		bool done(false);
+		while(!file.eos())
 		{
-			switch(parse_state)
+			// add space for multiline command support
+			Common::String line = file.readLine() + ' ';
+			if(file.err())
 			{
-			case PS_SECTION_SEARCH:
-				// section
-				if(*it == '[')
-				{
-					buffer.clear();
-
-					parse_state = PS_SECTION_NAME;
-				}
+				status = Common::Error(Common::kReadingFailed, _script + ", readLine()");
 				break;
-
-			case PS_SECTION_NAME:
-				// section end
-				if(*it == ']')
-					parse_state = buffer == _section ? PS_SECTION_BODY : PS_SECTION_SEARCH;
-				else
-					buffer += *it;
-				break;
-
-			case PS_SECTION_BODY:
-				// section
-				if(*it == '[')
-				{
-					skip_line = true;
-					done = true;
-				}
-				// comment
-				else if(*it == '*')
-				{
-					skip_line = true;
-				}
-				// command name
-				else if((*it >= 'a' && *it <= 'z') || (*it >= 'A' && *it <= 'Z'))
-				{
-					buffer.clear();
-					buffer += *it;
-
-					parse_state = PS_COMMAND_NAME;
-				}
-				break;
-
-			case PS_COMMAND_NAME:
-				// command value
-				if(*it == '=')
-				{
-					command_name = buffer;
-					buffer.clear();
-
-					parse_state = PS_COMMAND_VALUE;
-				}
-				else
-					buffer += *it;
-				break;
-
-			case PS_COMMAND_VALUE:
-				// command value end
-				if(*it == ';')
-				{
-					debug("%s=%s;", command_name.c_str(), buffer.c_str());
-
-					Common::HashMap<Common::String, Common::Error (GagEngine::*)(const Common::String &)>::const_iterator f = _commandCallbacks.find(command_name);
-					if(f != _commandCallbacks.end())
-						(this->*f->_value)(buffer);
-
-					parse_state = PS_SECTION_BODY;
-				}
-				else
-					buffer += *it;
-				break;
-
-			default:
-				;
 			}
 
-			if(skip_line)
+			bool skip_line(false);
+			for(Common::String::const_iterator it = line.begin(); it != line.end(); ++it)
+			{
+				switch(parse_state)
+				{
+				case PS_SECTION_SEARCH:
+					// section
+					if(*it == '[')
+					{
+						buffer.clear();
+
+						parse_state = PS_SECTION_NAME;
+					}
+					break;
+
+				case PS_SECTION_NAME:
+					// section end
+					if(*it == ']')
+					{
+#ifdef DEBUG_SKIM_SCRIPT
+						parse_state = PS_SECTION_BODY;
+#else
+						if(buffer == _section)
+							parse_state = PS_SECTION_BODY;
+						else if(buffer == _END_SECTION)
+						{
+							status = Common::Error(Common::kUnknownError, "[" + _section + "] script section not found");
+							skip_line = true;
+							done = true;
+						}
+						else
+							parse_state = PS_SECTION_SEARCH;
+#endif
+					}
+					else
+						buffer += *it;
+					break;
+
+				case PS_SECTION_BODY:
+					// section
+					if(*it == '[')
+					{
+#ifdef DEBUG_SKIM_SCRIPT
+						buffer.clear();
+						parse_state = PS_SECTION_NAME;
+#else
+						skip_line = true;
+						done = true;
+#endif
+					}
+					// comment
+					else if(*it == '*')
+					{
+						skip_line = true;
+					}
+					//NOTE: invalid syntax
+					else if(*it == '-' || *it == '/' || (*it >= 'A' && *it <= 'Z'))
+					{
+#ifndef DEBUG_SKIM_SCRIPT
+						warning("invalid script syntax [file: %s, section: %s, line: \"%s\"], skipped", _script.c_str(), _section.c_str(), line.c_str());
+#endif
+						skip_line = true;
+					}
+					// command name
+					else if((*it >= 'a' && *it <= 'z'))
+					{
+						buffer.clear();
+						buffer += *it;
+
+						parse_state = PS_COMMAND_NAME;
+					}
+					break;
+
+				case PS_COMMAND_NAME:
+					// command value
+					if(*it == '=')
+					{
+						command_name = buffer;
+						buffer.clear();
+
+						parse_state = PS_COMMAND_VALUE;
+					}
+					else
+						buffer += *it;
+					break;
+
+				case PS_COMMAND_VALUE:
+					// command value end
+					if(*it == ';')
+					{
+						command_name.trim();
+						buffer.trim();
+
+#ifndef DEBUG_SKIM_SCRIPT
+						debug("%s=%s;", command_name.c_str(), buffer.c_str());
+#endif
+
+						Common::HashMap<Common::String, Common::Error (GagEngine::*)(const Common::String &)>::const_iterator f = _commandCallbacks.find(command_name);
+						if(f != _commandCallbacks.end())
+						{
+							status = (this->*f->_value)(buffer);
+							if(status.getCode() != Common::kNoError)
+							{
+								skip_line = true;
+								done = true;
+							}
+						}
+
+						parse_state = PS_SECTION_BODY;
+					}
+					else
+						buffer += *it;
+					break;
+				}
+
+				if(skip_line)
+					break;
+			}
+
+			if(done)
 				break;
 		}
-
-		if(done)
-			break;
+	}
+	else
+	{
+		status = Common::Error(Common::kReadingFailed, _script + ", open()");
 	}
 
 	return status;
 }
 
 
+Common::String GagEngine::ParseOption(Common::Array<Common::String> &arguments, Common::String option)
+{
+	//NOTE: unable to use StringTokenizer here, it doesn't support empty token extraction
+#define EVENT_OPTIONS_TOKENIZE
+#ifdef EVENT_OPTIONS_TOKENIZE
+	Common::StringTokenizer tokenizer(option, Common::String(_ARGUMENT_DELIMITER));
+
+	Common::String name(tokenizer.nextToken());
+
+	while(!tokenizer.empty())
+		arguments.push_back(tokenizer.nextToken());
+
+	return name;
+#else
+	// make things easier
+	option += _ARGUMENT_DELIMITER;
+	const char *o = option.c_str();
+
+	for(const char *p = o; *p != '\0'; ++p)
+	{
+		if(*p == _ARGUMENT_DELIMITER)
+		{
+			arguments.push_back(Common::String(o, p));
+			o = p + 1;
+		}
+	}
+
+	// separate option name
+	Common::String name(arguments.front());
+	arguments.remove_at(0);
+
+	return name;
+#endif
+}
+
+
 Common::Error GagEngine::ScriptCatch(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Catch] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptClass(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Class] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptCommand(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Command] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptDriveSpeed(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script DriveSpeed] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptEvent(const Common::String &value)
 {
-	return Common::kUnknownError;
+	Common::StringTokenizer tokenizer(value, Common::String(_OPTION_PREFIX));
+
+	Event event;
+	event.name = tokenizer.nextToken();
+	event.name.trim();
+	if(event.name.empty())
+		return Common::Error(Common::kUnknownError, "[Script Event] unnamed event");
+
+	if(tokenizer.empty())
+		return Common::Error(Common::kUnknownError, "[Script Event] no options");
+
+	do
+	{
+		Common::String option(tokenizer.nextToken());
+		option.trim();
+		Common::Array<Common::String> option_arguments;
+		Common::String option_name = ParseOption(option_arguments, option);
+
+		if(option_name == "PRELOAD")
+		{
+			switch(option_arguments.size())
+			{
+			case 1:
+				event.section = option_arguments[0];
+				break;
+
+			case 2:
+				;
+				break;
+
+			case 3:
+				event.script = option_arguments[0];
+				event.section = option_arguments[1];
+				event.transition_mode = option_arguments[2];
+				break;
+
+			default:
+				return Common::Error(Common::kUnknownError, "[Script Event] PRELOAD: invalid option arguments");
+			}
+		}
+		else
+		{
+//			warning("[Script Event] option %s is unsupported", option_name.c_str());
+		}
+
+		//DEBUG
+#ifdef DEBUG_SKIM_SCRIPT
+		G_STRING_SET.insert(option_name);
+		if(option_name == "PRELOAD")
+		{
+			debug("%s:%s:%s",
+				  option_arguments.size() >= 1 ? option_arguments[0].c_str() : "",
+				  option_arguments.size() >= 2 ? option_arguments[1].c_str() : "",
+				  option_arguments.size() >= 3 ? option_arguments[2].c_str() : ""
+ 				);
+//			for(uint i = 0; i < option_arguments.size(); ++i)
+//				cout << ':' << option_arguments[i].c_str();
+//			cout << endl;
+//			debug("%s", option.c_str());
+		}
+#endif
+	}
+	while(!tokenizer.empty());
+
+	_events.push_back(event);
+
+	return Common::Error(Common::kNoError);
 }
 
 
 Common::Error GagEngine::ScriptException(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Exception] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptExFiles(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script ExFiles] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptFadeMask(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script FadeMask] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptFlags(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Flags] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptFont(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Font] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptImage(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Image] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptInventory(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Inventory] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptLanguage(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Language] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptLayer(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Layer] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptList(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script List] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptLoad(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Load] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptLocal(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Local] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptMouse(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Mouse] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptObject(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Object] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptParams(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Params] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptPath(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Path] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptSource(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Source] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptSubLocation(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script SubLocation] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptTemplate(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Template] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptText(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Text] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptTry(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Try] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptVolume(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Volume] not implemented");
+#endif
 }
 
 
 Common::Error GagEngine::ScriptZone(const Common::String &value)
 {
-	return Common::kUnknownError;
+#ifdef DEBUG_SKIM_SCRIPT
+	return Common::Error(Common::kNoError);
+#else
+	return Common::Error(Common::kUnknownError, "[Script Zone] not implemented");
+#endif
 }
 
 
 
-/*
+
 void GagEngine::ExtractCdf(const Common::String &a_fn)
 {
 	CdfArchive archive(a_fn, true);
@@ -489,7 +754,7 @@ void GagEngine::ExtractCdf(const Common::String &a_fn)
 	}
 }
 
-
+/*
 void GagEngine::BitmapTest()
 {
 //	Graphics::BitmapDecoder bitmap_decoder;
