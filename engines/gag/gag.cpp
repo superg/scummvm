@@ -13,7 +13,7 @@
 #include "gag.h"
 
 
-#define DEBUG_SKIM_SCRIPT
+//#define DEBUG_SKIM_SCRIPT
 
 #ifdef DEBUG_SKIM_SCRIPT
 #include <set>
@@ -118,9 +118,9 @@ void GagEngine::Init()
 	_script = "GAG_CMD_CLEAN.CFG";
 //	_section = "CFG";
 	Common::Error script_error = StateScript();
-//	debug("event options: ");
-//	for(std::set<Common::String>::iterator it = G_STRING_SET.begin(); it != G_STRING_SET.end(); ++it)
-//		debug("\t%s", it->c_str());
+	debug("skim debug: ");
+	for(std::set<Common::String>::iterator it = G_STRING_SET.begin(); it != G_STRING_SET.end(); ++it)
+		debug("\t%s", it->c_str());
 	quitGame();
 	_state = GS_ACTIVE;
 #endif
@@ -158,17 +158,16 @@ Common::Error GagEngine::Update()
 
 Common::Error GagEngine::StateActive()
 {
-	Common::Error status(Common::kNoError);
-
-	Common::Event event;
-	_eventMan->pollEvent(event);
-	switch(event.type)
+	// process input
+	Common::Event input_event;
+	_eventMan->pollEvent(input_event);
+	switch(input_event.type)
 	{
 	case Common::EVENT_KEYDOWN:
-		switch(event.kbd.keycode)
+		switch(input_event.kbd.keycode)
 		{
 		case Common::KEYCODE_q:
-			if(event.kbd.hasFlags(Common::KBD_CTRL))
+			if(input_event.kbd.hasFlags(Common::KBD_CTRL))
 				quitGame();
 			break;
 
@@ -181,7 +180,56 @@ Common::Error GagEngine::StateActive()
 		;
 	}
 
-	return status;
+	// process game events
+	for(Common::List<Event>::iterator it = _events.begin(); it != _events.end(); ++it)
+	{
+		//TODO: implement triggers
+
+		for(uint i = 0; i < it->commands.size(); ++i)
+		{
+			Option &command = it->commands[i];
+
+			if(command.name == "PRELOAD")
+			{
+				switch(command.arguments.size())
+				{
+				case 1:
+					_section = command.arguments[0];
+					break;
+
+				case 2:
+					if(command.arguments[1] == "NOFADE" || command.arguments[1] == "PALFADE")
+					{
+						_section = command.arguments[0];
+//FIXME					_fadeMode = command.arguments[1];
+					}
+					else
+					{
+						_script = command.arguments[0];
+						_section = command.arguments[1];
+					}
+					break;
+
+				case 3:
+					_script = command.arguments[0];
+					_section = command.arguments[1];
+//FIXME				_fadeMode = command.arguments[2];
+					break;
+
+				default:
+					return Common::Error(Common::kUnknownError, "[" + command.name + "] invalid arguments");
+				}
+
+				_state = GS_SCRIPT;
+			}
+			else
+			{
+				return(Common::Error(Common::kUnknownError, "command " + command.name + " not implemented"));
+			}
+		}
+	}
+
+	return Common::Error(Common::kNoError);
 }
 
 
@@ -340,39 +388,19 @@ Common::Error GagEngine::StateScript()
 }
 
 
-Common::String GagEngine::ParseOption(Common::Array<Common::String> &arguments, Common::String option)
+void GagEngine::ParseOption(Option &option, const Common::String &line)
 {
-	//NOTE: unable to use StringTokenizer here, it doesn't support empty token extraction
-#define EVENT_OPTIONS_TOKENIZE
-#ifdef EVENT_OPTIONS_TOKENIZE
-	Common::StringTokenizer tokenizer(option, Common::String(_ARGUMENT_DELIMITER));
+	Common::StringTokenizer tokenizer(line, Common::String(_ARGUMENT_DELIMITER));
 
-	Common::String name(tokenizer.nextToken());
-
+	option.name = tokenizer.nextToken();
+	option.name.trim();
+	option.arguments.clear();
 	while(!tokenizer.empty())
-		arguments.push_back(tokenizer.nextToken());
-
-	return name;
-#else
-	// make things easier
-	option += _ARGUMENT_DELIMITER;
-	const char *o = option.c_str();
-
-	for(const char *p = o; *p != '\0'; ++p)
 	{
-		if(*p == _ARGUMENT_DELIMITER)
-		{
-			arguments.push_back(Common::String(o, p));
-			o = p + 1;
-		}
+		Common::String argument(tokenizer.nextToken());
+		argument.trim();
+		option.arguments.push_back(argument);
 	}
-
-	// separate option name
-	Common::String name(arguments.front());
-	arguments.remove_at(0);
-
-	return name;
-#endif
 }
 
 
@@ -431,54 +459,64 @@ Common::Error GagEngine::ScriptEvent(const Common::String &value)
 
 	do
 	{
-		Common::String option(tokenizer.nextToken());
-		option.trim();
-		Common::Array<Common::String> option_arguments;
-		Common::String option_name = ParseOption(option_arguments, option);
+		Common::String option_line(tokenizer.nextToken());
+		option_line.trim();
+		Option option;
+		ParseOption(option, option_line);
 
-		if(option_name == "PRELOAD")
+		if(option.name == "C")
 		{
-			switch(option_arguments.size())
-			{
-			case 1:
-				event.section = option_arguments[0];
-				break;
-
-			case 2:
-				;
-				break;
-
-			case 3:
-				event.script = option_arguments[0];
-				event.section = option_arguments[1];
-				event.transition_mode = option_arguments[2];
-				break;
-
-			default:
-				return Common::Error(Common::kUnknownError, "[Script Event] PRELOAD: invalid option arguments");
-			}
+			;
 		}
+		else if(option.name == "COMM")
+		{
+			;
+		}
+		else if(option.name == "DEST")
+		{
+			;
+		}
+		else if(option.name == "IMAGE")
+		{
+			;
+		}
+		else if(option.name == "KEYUP")
+		{
+			;
+		}
+		else if(option.name == "R")
+		{
+			;
+		}
+		else if(option.name == "RECT")
+		{
+			;
+		}
+		else if(option.name == "SOUR")
+		{
+			;
+		}
+		else if(option.name == "TRANSPARENT")
+		{
+			;
+		}
+		else if(option.name == "ZONE")
+		{
+			;
+		}
+		// command for on event execution
 		else
 		{
-//			warning("[Script Event] option %s is unsupported", option_name.c_str());
-		}
+			if(option.name[0] != '*')
+			{
+				event.commands.push_back(option);
 
-		//DEBUG
+				//DEBUG
 #ifdef DEBUG_SKIM_SCRIPT
-		G_STRING_SET.insert(option_name);
-		if(option_name == "PRELOAD")
-		{
-			debug("%s:%s:%s",
-				  option_arguments.size() >= 1 ? option_arguments[0].c_str() : "",
-				  option_arguments.size() >= 2 ? option_arguments[1].c_str() : "",
-				  option_arguments.size() >= 3 ? option_arguments[2].c_str() : ""
- 				);
-//			for(uint i = 0; i < option_arguments.size(); ++i)
-//				cout << ':' << option_arguments[i].c_str();
-//			cout << endl;
-//			debug("%s", option.c_str());
-		}
+				G_STRING_SET.insert(option.name);
 #endif
+			}
+		}
 	}
 	while(!tokenizer.empty());
 

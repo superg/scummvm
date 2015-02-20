@@ -49,20 +49,23 @@ private:
 	static const int _SCREEN_FPS;
 
 	// ************ SCRIPT ************
-	enum TransitionMode
+//	enum TransitionMode
+//	{
+//		TM_NOFADE,
+//		TM_PALFADE,
+//		TM_FRAMEFADE
+//	};
+
+	struct Option
 	{
-		TM_NOFADE,
-		TM_PALFADE,
-		TM_FRAMEFADE
+		Common::String name;
+		Common::Array<Common::String> arguments;
 	};
 
 	struct Event
 	{
 		Common::String name;
-
-		Common::String script;
-		Common::String section;
-		TransitionMode transition_mode;
+		Common::Array<Option> commands;
 	};
 
 
@@ -88,7 +91,7 @@ private:
 	Common::Error StateActive();
 	Common::Error StateScript();
 
-	Common::String ParseOption(Common::Array<Common::String> &arguments, Common::String option);
+	void ParseOption(Option &option, const Common::String &line);
 
 	Common::Error ScriptCatch(const Common::String &value);
 	Common::Error ScriptClass(const Common::String &value);
